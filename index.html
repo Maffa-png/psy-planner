@@ -1,0 +1,1082 @@
+﻿<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Сэтгэл зүйчийн төлөвлөгөө</title>
+<meta name="theme-color" content="#fbeff4">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+:root{
+  --bg:#fdf3f7; --surface:#fffbfd; --surface2:#f9ecf3; --ink:#45384c; --muted:#8c7d94; --line:#f1dfe9;
+  --accent:#a984d1; --accent-ink:#ffffff; --accent-soft:#f4ebfa; --tr:#8aa2e0; --tr-soft:#e8eefb;
+  --lav:#e48aa6; --lav-soft:#fde9f0;
+  --rose:#dd5f76; --rose-soft:#fde3e8;
+  --gold:#d89a2b; --gold-soft:#fcefd2;
+  --shadow:0 1px 2px rgba(60,50,30,.04),0 6px 20px rgba(60,50,30,.06);
+  --r:16px;
+}
+@media (prefers-color-scheme:dark){
+  body{background:linear-gradient(180deg,#2a1a2f 0%,#231a33 60%,#1b1d36 100%) fixed}
+  body::before{background-image:url(bg-dark.svg)!important}
+  .side{background:rgba(41,29,46,.55)!important}
+  :root:not([data-theme="light"]){
+    --bg:#1d1520; --surface:#291d2e; --surface2:#33253a; --ink:#f4eaf6; --muted:#b19fb6; --line:#41304a;
+    --accent:#cfa0ea; --accent-ink:#241230; --accent-soft:#3b2848; --tr:#9fb5f0; --tr-soft:#27304f;
+    --lav:#f2a0b8; --lav-soft:#4a2634;
+    --rose:#f27a8c; --rose-soft:#4d252d;
+    --gold:#eebf62; --gold-soft:#41361d;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:linear-gradient(180deg,#fdeef4 0%,#f7eefb 60%,#eef1fc 100%) fixed;position:relative;color:var(--ink);font:15px/1.5 "Segoe UI",system-ui,-apple-system,"Noto Sans",Roboto,sans-serif;min-height:100vh}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* layout */
+.app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+.side{background:rgba(255,250,252,.55);backdrop-filter:blur(10px);position:sticky;top:0;height:100vh;padding:24px 16px;display:flex;flex-direction:column;gap:6px;border-right:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 10px 18px;font-weight:700;font-size:16px;line-height:1.2}
+.brand img{width:36px;height:36px;border-radius:11px}
+.brand small{display:block;font-weight:500;color:var(--muted);font-size:12px}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;color:var(--muted);font-weight:600;text-align:left}
+.nav button:hover{background:var(--surface2)}
+.nav button.on{background:var(--accent-soft);color:var(--accent)}
+.side .grow{flex:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;border-radius:12px;font-weight:600;background:var(--surface);border:1px solid var(--line);transition:.15s}
+.btn:hover{background:var(--surface2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.danger{color:var(--rose)}
+.btn.sm{padding:6px 11px;font-size:13px;border-radius:10px}
+.main{padding:28px clamp(16px,4vw,48px) 48px;max-width:1180px;width:100%}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+.top h1{margin:0;font-size:26px;letter-spacing:-.01em;line-height:1.2}
+.top .sub{color:var(--muted);margin-top:2px}
+.tools{display:flex;gap:8px;align-items:center}
+.ibtn{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.ibtn:hover{color:var(--ink);background:var(--surface2)}
+.tabbar,.fab,.mtop{display:none}
+
+/* cards */
+.card{display:flex;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
+.card.session::before{background:var(--lav)}
+.card.training::before{background:var(--tr)}
+.card.imp{background:linear-gradient(90deg,var(--rose-soft),var(--surface) 55%)}
+.card.imp::before{background:var(--rose)}
+.stk{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;font-size:30px;background:var(--accent-soft);flex:none;overflow:hidden}
+.session .stk{background:var(--lav-soft)}
+.training .stk{background:var(--tr-soft)}
+.stk img{width:100%;height:100%;object-fit:cover}
+.card .body{flex:1;min-width:0}
+.card .t{font-weight:700;font-size:16px;line-height:1.3;overflow-wrap:anywhere}
+.card .meta{display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--muted);font-size:13px;margin-top:3px}
+.card .note{margin-top:6px;font-size:13.5px;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere}
+.badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.badge{font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:99px;background:var(--surface2);color:var(--muted)}
+.badge.imp{background:var(--rose-soft);color:var(--rose)}
+.badge.ses{background:var(--lav-soft);color:var(--lav)}
+.badge.tr{background:var(--tr-soft);color:var(--tr)}
+.badge.pl{background:var(--accent-soft);color:var(--accent)}
+.badge.warn{background:var(--gold-soft);color:var(--gold)}
+.acts{display:flex;flex-direction:column;gap:4px;align-items:flex-end;justify-content:flex-start}
+.acts .row{display:flex;gap:2px}
+.act{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;color:var(--muted)}
+.act:hover{background:var(--surface2);color:var(--ink)}
+.act.ok:hover{color:var(--accent)}.act.no:hover{color:var(--rose)}
+.card.done .t{text-decoration:line-through;opacity:.6}
+.card.done,.card.cancelled{opacity:.7}
+.card.cancelled .t{text-decoration:line-through;color:var(--muted)}
+.card.cancelled .stk{filter:grayscale(1);opacity:.6}
+.list{display:flex;flex-direction:column;gap:10px}
+.empty{text-align:center;color:var(--muted);padding:34px 16px;border:1.5px dashed var(--line);border-radius:var(--r)}
+.empty .big{font-size:38px;margin-bottom:4px}
+
+/* today */
+.hero{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:26px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow)}
+.next{background:linear-gradient(135deg,var(--accent-soft),var(--lav-soft));border:0}
+.next h3,.panel h3{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.next .nt{font-size:20px;font-weight:700;line-height:1.3}
+.next .nm{color:var(--muted);margin-top:4px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{text-align:center;padding:10px 4px;border-radius:12px;background:var(--surface2)}
+.stat b{display:block;font-size:24px;line-height:1.1}
+.stat span{font-size:12px;color:var(--muted)}
+h2.sec{font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:26px 0 10px;display:flex;align-items:center;gap:8px}
+
+/* week */
+.nav2{display:flex;align-items:center;gap:8px}
+.nav2 .lbl{font-weight:700;min-width:150px;text-align:center}
+.week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;align-items:start}
+.day{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px;min-height:150px;display:flex;flex-direction:column;gap:8px}
+.day.today{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.day .dh{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase}
+.day .dh b{font-size:20px;color:var(--ink);text-transform:none}
+.day.today .dh b{color:var(--accent)}
+.chip{display:flex;gap:7px;align-items:flex-start;padding:7px 8px;border-radius:10px;background:var(--accent-soft);cursor:pointer;font-size:12.5px;line-height:1.3;border-left:3px solid var(--accent);text-align:left;width:100%}
+.chip.session{background:var(--lav-soft);border-color:var(--lav)}
+.chip.training{background:var(--tr-soft);border-color:var(--tr)}
+.chip.imp{border-color:var(--rose)}
+.chip.cancelled{opacity:.5;text-decoration:line-through}
+.chip.done{opacity:.6}
+.chip .cs{font-size:16px;line-height:1;width:20px;height:20px;flex:none;border-radius:5px;overflow:hidden;display:grid;place-items:center}
+.chip .cs img{width:100%;height:100%;object-fit:cover}
+.chip small{display:block;color:var(--muted)}
+.dadd{margin-top:auto;font-size:12px;color:var(--muted);padding:4px;border-radius:8px;border:1px dashed var(--line);text-align:center}
+.dadd:hover{background:var(--surface2)}
+
+/* month */
+.mgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.main{min-width:0}
+.cell{min-width:0;overflow:hidden}
+.mgrid .wd{font-size:12px;font-weight:700;color:var(--muted);text-align:center;padding:4px 0;text-transform:uppercase}
+.cell{aspect-ratio:1/.92;min-height:62px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px;display:flex;flex-direction:column;align-items:flex-start;text-align:left;position:relative;transition:.12s}
+.cell:hover{border-color:var(--accent)}
+.cell.out{opacity:.4}
+.cell.today .n{background:var(--accent);color:var(--accent-ink)}
+.cell.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.cell .n{font-size:12.5px;font-weight:700;min-width:22px;height:22px;display:grid;place-items:center;border-radius:99px;padding:0 4px}
+.cell .stks{display:flex;gap:1px;margin-top:auto;font-size:15px;line-height:1;flex-wrap:wrap}
+.cell .stks img{width:16px;height:16px;border-radius:4px;object-fit:cover}
+.cell .more{font-size:10.5px;color:var(--muted);font-weight:700;margin-left:2px;align-self:flex-end}
+.cell .dot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--rose)}
+
+/* year */
+.ygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.mini{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;text-align:left;transition:.15s;box-shadow:var(--shadow)}
+.mini:hover{transform:translateY(-2px);border-color:var(--accent)}
+.mini .mh{display:flex;justify-content:space-between;font-weight:700;margin-bottom:8px}
+.mini .mh span{color:var(--muted);font-weight:600;font-size:12px}
+.mm{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.mm i{aspect-ratio:1;border-radius:5px;background:var(--surface2);font-style:normal;font-size:9.5px;display:grid;place-items:center;color:var(--muted)}
+.mm i.e{background:transparent}
+.mm i.l1{background:var(--accent-soft);color:var(--accent)}
+.mm i.l2{background:color-mix(in srgb,var(--accent) 45%,var(--surface));color:var(--ink)}
+.mm i.l3{background:var(--accent);color:var(--accent-ink)}
+.mm i.im{outline:2px solid var(--rose);outline-offset:-1px}
+.mm i.td{font-weight:800;outline:2px solid var(--ink);outline-offset:-1px}
+
+/* list */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.fchip{padding:7px 14px;border-radius:99px;background:var(--surface);border:1px solid var(--line);font-weight:600;font-size:13.5px;color:var(--muted)}
+.fchip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.search{flex:1;min-width:180px;padding:9px 14px;border-radius:99px;border:1px solid var(--line);background:var(--surface);outline:none}
+.search:focus,.in:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+
+/* modal */
+.back{position:fixed;inset:0;background:rgba(30,28,24,.45);display:grid;place-items:center;padding:16px;z-index:50;animation:f .15s;backdrop-filter:blur(3px)}
+@keyframes f{from{opacity:0}}
+@keyframes u{from{transform:translateY(14px);opacity:0}}
+.modal{background:var(--surface);border-radius:20px;width:min(560px,100%);max-height:calc(100vh - 32px);overflow:auto;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25);animation:u .2s}
+.modal h2{margin:0 0 16px;font-size:20px}
+.fld{display:flex;flex-direction:column;gap:5px;margin-bottom:13px}
+.fld>label,.lab{font-size:12.5px;font-weight:700;color:var(--muted)}
+.in{width:100%;padding:10px 12px;border-radius:11px;border:1px solid var(--line);background:var(--bg);outline:none}
+textarea.in{resize:vertical;min-height:70px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--surface2);border-radius:12px;padding:4px;gap:4px;margin-bottom:14px}
+.seg button{padding:9px;border-radius:9px;font-weight:700;color:var(--muted)}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.seg3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.seg3 button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;border-radius:13px;border:1.5px solid var(--line);background:var(--bg);font-size:22px;line-height:1.2}
+.seg3 button span{font-size:12px;font-weight:700;color:var(--muted)}
+.seg3 button.on{border-color:var(--accent);background:var(--accent-soft)}
+.seg3 button.on span{color:var(--ink)}
+.dgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-top:10px}
+.dgrid .dw{font-size:11px;font-weight:700;color:var(--muted);text-align:center}
+.dgrid button{aspect-ratio:1;border-radius:11px;background:var(--bg);border:1px solid var(--line);font-weight:600}
+.dgrid button:hover{border-color:var(--accent)}
+.dgrid button.td{box-shadow:inset 0 0 0 2px var(--lav)}
+.dgrid button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.mfoot{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+.mfoot .l{margin-right:auto}
+.togg{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:var(--bg);width:100%;text-align:left;font-weight:600}
+.togg .s{color:var(--muted)}
+.togg.on{border-color:var(--rose);background:var(--rose-soft)}
+.togg.on .s{color:var(--rose)}
+.stkpick{display:flex;align-items:center;gap:12px}
+.stkpick .cur{width:48px;height:48px;border-radius:13px;background:var(--accent-soft);display:grid;place-items:center;font-size:28px;overflow:hidden;flex:none}
+.stkpick .cur img{width:100%;height:100%;object-fit:cover}
+.sp{border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:10px;background:var(--bg)}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(42px,1fr));gap:6px}
+.sgrid button{aspect-ratio:1;border-radius:11px;font-size:24px;display:grid;place-items:center;overflow:hidden;position:relative}
+.sgrid button:hover{background:var(--surface2)}
+.sgrid button.on{background:var(--accent-soft);box-shadow:inset 0 0 0 2px var(--accent)}
+.sgrid img{width:100%;height:100%;object-fit:cover}
+.sgrid .rm{position:absolute;top:1px;right:1px;width:16px;height:16px;border-radius:50%;background:var(--rose);color:#fff;font-size:11px;line-height:16px;display:none;place-items:center}
+.sgrid button:hover .rm{display:grid}
+.sgl{font-size:11.5px;font-weight:700;color:var(--muted);margin:10px 0 6px;text-transform:uppercase;letter-spacing:.05em}
+.sgl:first-child{margin-top:0}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.hint{font-size:12.5px;color:var(--muted);margin:4px 0 0}
+
+/* toast */
+.toasts{position:fixed;right:20px;bottom:20px;display:flex;flex-direction:column;gap:8px;z-index:70;max-width:min(380px,calc(100vw - 32px))}
+.toast{background:var(--ink);color:var(--bg);padding:12px 14px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;gap:12px;align-items:center;animation:u .2s}
+.toast.bell{background:var(--surface);color:var(--ink);border:1px solid var(--accent)}
+.toast .tx{flex:1;font-size:14px}
+.toast button{font-weight:700;color:var(--accent);padding:2px 6px}
+.toast:not(.bell) button{color:var(--accent-soft)}
+
+@media (max-width:900px){
+  .week{grid-template-columns:1fr}
+  .day{min-height:0}
+  .hero{grid-template-columns:1fr}
+}
+@media (max-width:820px){
+  .app{display:block}
+  .side{display:none}
+  .main{padding:16px 16px calc(96px + env(safe-area-inset-bottom))}
+  .top h1{font-size:22px}
+  .tabbar{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:30}
+  .tabbar button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:600;color:var(--muted);padding:6px 0;border-radius:10px}
+  .tabbar button.on{color:var(--accent)}
+  .fab{display:grid;place-items:center;position:fixed;right:18px;bottom:calc(78px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;background:var(--accent);color:var(--accent-ink);box-shadow:0 8px 24px rgba(60,80,70,.35);z-index:31}
+  .fab svg{width:26px;height:26px}
+  .toasts{left:16px;right:16px;bottom:calc(92px + env(safe-area-inset-bottom));max-width:none}
+  .card{padding:12px;gap:12px}
+  .stk{width:46px;height:46px;font-size:26px}
+  .cell{min-height:52px;padding:4px;aspect-ratio:1/1}
+  .cell .stks{font-size:12px}.cell .stks img{width:13px;height:13px}
+  .two,.three{grid-template-columns:1fr 1fr}
+  .back{align-items:end;padding:0}
+  .modal{border-radius:22px 22px 0 0;width:100%;max-height:92vh;padding:20px 18px calc(20px + env(safe-area-inset-bottom))}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* skyline background */
+body::before{content:"";position:fixed;left:0;right:0;bottom:0;height:clamp(150px,16vw,320px);background:url(bg-light.svg) center bottom/cover no-repeat;pointer-events:none;z-index:0;opacity:.55}
+.app{position:relative;z-index:1}
+.side{background:rgba(255,251,253,.6)!important}
+@media (max-width:820px){body::before{bottom:calc(58px + env(safe-area-inset-bottom));height:130px}}
+.btn.primary,.fab{font-weight:700;letter-spacing:.01em}
+.btn:focus-visible,button:focus-visible,.in:focus-visible{outline:3px solid var(--accent-soft);outline-offset:1px}
+
+/* auth */
+body.authing .app,body.authing .tabbar,body.authing .fab{display:none}
+#auth{display:none}
+body.authing #auth{display:grid;place-items:center;min-height:100vh;padding:20px;position:relative;z-index:1}
+.acard{width:min(420px,100%);background:rgba(255,251,253,.92);border:1px solid var(--line);border-radius:24px;padding:30px 26px;box-shadow:var(--shadow);backdrop-filter:blur(8px)}
+.acard .logo{width:56px;height:56px;border-radius:16px;display:block;margin:0 auto 12px}
+.acard h1{margin:0 0 4px;font-size:22px;text-align:center}
+.acard p.s{margin:0 0 20px;text-align:center;color:var(--muted)}
+.acard .btn{width:100%;margin-top:6px}
+.err{color:var(--rose);font-size:13.5px;min-height:20px;margin-top:6px;text-align:center}
+@media (prefers-color-scheme:dark){.acard{background:rgba(41,29,46,.9)}.side{background:rgba(41,29,46,.6)!important}}
+
+/* user chip, admin */
+.whoami{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:var(--surface2);font-size:13px;line-height:1.25;overflow:hidden}
+.whoami b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.whoami span{color:var(--muted)}
+.av{width:34px;height:34px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;flex:none}
+.acc{display:flex;gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;box-shadow:var(--shadow);flex-wrap:wrap}
+.acc.off{opacity:.55}
+.acc .info{flex:1;min-width:180px}
+.acc .info b{font-size:15.5px}
+.acc .info div{color:var(--muted);font-size:13px}
+.acc .btns{display:flex;gap:6px;flex-wrap:wrap}
+.cred{background:var(--surface2);border-radius:14px;padding:14px;font-family:ui-monospace,Consolas,monospace;font-size:14px;line-height:1.8;overflow-wrap:anywhere}
+.tsel{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><img src="icon.svg" alt=""><div>Сэтгэл зүйчийн<br>төлөвлөгөө<small id="schoolName"></small></div></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="grow"></div>
+    <div class="whoami" id="whoami"></div>
+    <button class="btn primary" data-act="add">+ Шинэ нэмэх</button>
+    <button class="btn" data-act="settings"><span data-ico="settings"></span> Тохиргоо</button>
+  </aside>
+  <main class="main" id="main"></main>
+</div>
+<nav class="tabbar" id="tabbar"></nav>
+<button class="fab" data-act="add" aria-label="Шинэ нэмэх"><span data-ico="plus"></span></button>
+<div id="auth"></div>
+<div id="modalRoot"></div>
+<div class="toasts" id="toasts"></div>
+
+<script>
+'use strict';
+/* ───────── helpers ───────── */
+const $ = (s, r = document) => r.querySelector(s);
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const fromYmd = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (s, n) => { const d = fromYmd(s); d.setDate(d.getDate() + n); return ymd(d); };
+const today = () => ymd(new Date());
+const startOfWeek = s => { const d = fromYmd(s); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return ymd(d); };
+const daysBetween = (a, b) => Math.round((fromYmd(b) - fromYmd(a)) / 864e5);
+const WD = ['Дав', 'Мяг', 'Лха', 'Пүр', 'Баа', 'Бям', 'Ням'];
+const WDL = ['Даваа', 'Мягмар', 'Лхагва', 'Пүрэв', 'Баасан', 'Бямба', 'Ням'];
+const wdOf = s => (fromYmd(s).getDay() + 6) % 7;
+const fmtDate = s => { const d = fromYmd(s); return `${d.getMonth() + 1}-р сар ${d.getDate()}, ${WDL[wdOf(s)]}`; };
+const fmtShort = s => { const d = fromYmd(s); return `${d.getMonth() + 1}/${d.getDate()}`; };
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+const ICO = {
+  check: '<polyline points="20 6 9 17 4 12"/>',
+  clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/>',
+  trash: '<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>',
+  plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  bell: '<path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>',
+  home: '<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>',
+  week: '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="15" x2="16" y2="15"/>',
+  month: '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+  year: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+  list: '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.5 1z"/>',
+  left: '<polyline points="15 18 9 12 15 6"/>',
+  right: '<polyline points="9 18 15 12 9 6"/>',
+  star: '<polygon points="12 2 15.1 8.3 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 8.9 8.3 12 2"/>',
+  undo: '<polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 102.1-9.4L1 10"/>',
+  download: '<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  logout: '<path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
+  copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>',
+  key: '<circle cx="8" cy="15" r="4"/><line x1="10.8" y1="12.2" x2="21" y2="2"/><line x1="17" y1="6" x2="20" y2="9"/>',
+  upload: '<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>',
+};
+const ico = (n, extra = '') => `<svg class="i" viewBox="0 0 24 24" ${extra}>${ICO[n]}</svg>`;
+const hydrateIcons = (root = document) => root.querySelectorAll('[data-ico]').forEach(e => { e.outerHTML = ico(e.dataset.ico); });
+
+/* ───────── stickers ───────── */
+const STICKERS = [
+  ['Сэтгэл хөдлөл', ['😊', '🥰', '😌', '🤗', '😢', '😡', '😰', '🤔', '😴', '🥳', '💪', '🙏']],
+  ['Байгаль', ['🌸', '🌿', '🌻', '🍀', '🌈', '☀️', '🌙', '⭐', '☁️', '🦋', '🐝', '🌳']],
+  ['Амьтад', ['🐻', '🐰', '🐱', '🐶', '🦊', '🐼', '🐨', '🦉', '🐢', '🐥', '🦄', '🐬']],
+  ['Сургууль', ['📚', '✏️', '🎒', '🏫', '🧩', '🎨', '🎵', '⚽', '🧠', '💡', '🔬', '🎓']],
+  ['Төлөвлөгөө', ['📌', '📝', '📅', '🎯', '🔔', '🗂️', '📊', '✅', '🤝', '👨‍👩‍👧', '💬', '🎈']],
+  ['Чухал', ['❗', '❤️', '🔥', '🚩', '🏆', '🎁', '🎉', '⏰', '🩺', '🕊️', '🛡️', '🌟']],
+];
+const TYPES = { session: { l: 'Зөвлөгөө уулзалт', e: '💬', c: 'ses' }, training: { l: 'Сургалт', e: '🎓', c: 'tr' }, plan: { l: 'Төлөвлөгөө', e: '📌', c: 'pl' } };
+const stkHtml = (s, type) => !s ? (TYPES[type] || TYPES.plan).e
+  : s.startsWith('data:') ? `<img src="${s}" alt="">` : esc(s);
+
+/* ───────── state ───────── */
+const LEGACY_KEY = 'psy-planner-v1', ACC_KEY = 'psy-accounts', SES_KEY = 'psy-session';
+const blank = () => ({ items: [], stickers: [], fired: {}, settings: { notify: true, school: '' } });
+const jget = (k, d) => { try { const r = localStorage.getItem(k); return r ? JSON.parse(r) : d; } catch (e) { return d; } };
+const jset = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+let accounts = jget(ACC_KEY, []), me = null, KEY = null, state = blank();
+const saveAcc = () => jset(ACC_KEY, accounts);
+const dataKey = id => LEGACY_KEY + ':' + id;
+function loadState() { state = Object.assign(blank(), jget(KEY, {})); state.settings = Object.assign({ notify: true, school: '' }, state.settings); }
+const save = () => { if (KEY && !jset(KEY, state)) toast('Хадгалах хэмжээ дүүрсэн байна. Нөөцлөөд зарим sticker-ээ устгана уу.'); };
+
+/* SHA-256 (secure-context шаардахгүй, ямар ч хаяг дээр ижил хэш гаргана) */
+const SHA_K = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];
+function sha256(msg) {
+  const by = new TextEncoder().encode(msg), l = by.length, nb = ((l + 9 + 63) >> 6) << 6;
+  const b = new Uint8Array(nb); b.set(by); b[l] = 0x80;
+  const dv = new DataView(b.buffer); dv.setUint32(nb - 4, (l * 8) >>> 0); dv.setUint32(nb - 8, Math.floor(l * 8 / 4294967296));
+  let h = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+  const w = new Uint32Array(64), R = (x, n) => (x >>> n) | (x << (32 - n));
+  for (let o = 0; o < nb; o += 64) {
+    for (let i = 0; i < 16; i++) w[i] = dv.getUint32(o + i * 4);
+    for (let i = 16; i < 64; i++) { const s0 = R(w[i - 15], 7) ^ R(w[i - 15], 18) ^ (w[i - 15] >>> 3), s1 = R(w[i - 2], 17) ^ R(w[i - 2], 19) ^ (w[i - 2] >>> 10); w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0; }
+    let [a, b2, c, d, e, f, g, hh] = h;
+    for (let i = 0; i < 64; i++) {
+      const t1 = (hh + (R(e, 6) ^ R(e, 11) ^ R(e, 25)) + ((e & f) ^ (~e & g)) + SHA_K[i] + w[i]) | 0;
+      const t2 = ((R(a, 2) ^ R(a, 13) ^ R(a, 22)) + ((a & b2) ^ (a & c) ^ (b2 & c))) | 0;
+      hh = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b2; b2 = a; a = (t1 + t2) | 0;
+    }
+    h = [h[0] + a, h[1] + b2, h[2] + c, h[3] + d, h[4] + e, h[5] + f, h[6] + g, h[7] + hh].map(x => x | 0);
+  }
+  return h.map(x => (x >>> 0).toString(16).padStart(8, '0')).join('');
+}
+const hashPw = (pw, salt) => { let x = salt + ':' + pw; for (let i = 0; i < 3000; i++) x = sha256(x + salt); return x; };
+const makeAcc = ({ name, username, password, role }) => { const salt = uid() + uid(); return { id: uid(), name, username: username.trim().toLowerCase(), salt, hash: hashPw(password, salt), role, active: true, created: today() }; };
+const genPw = () => { const c = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s = ''; const r = crypto.getRandomValues(new Uint32Array(8)); r.forEach(n => s += c[n % c.length]); return s; };
+const b64e = o => btoa(unescape(encodeURIComponent(JSON.stringify(o))));
+const b64d = s => JSON.parse(decodeURIComponent(escape(atob(s))));
+const inviteLink = a => `${location.origin}${location.pathname}#invite=${b64e({ id: a.id, name: a.name, username: a.username, salt: a.salt, hash: a.hash, role: a.role })}`;
+async function copyText(t) { try { await navigator.clipboard.writeText(t); toast('Хуулагдлаа ✓'); } catch (e) { prompt('Хуулж аваарай:', t); } }
+
+const ui = {
+  view: 'today',
+  weekStart: startOfWeek(today()),
+  month: today().slice(0, 7),
+  sel: today(),
+  year: new Date().getFullYear(),
+  filter: 'all', q: '',
+};
+
+/* ───────── data logic ───────── */
+const endOf = i => i.endDate && i.endDate >= i.date ? i.endDate : i.date;
+const sortFn = (a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')) || a.title.localeCompare(b.title);
+const itemsOn = d => state.items.filter(i => i.date <= d && endOf(i) >= d).sort((a, b) => (a.time || '').localeCompare(b.time || '') || a.title.localeCompare(b.title));
+const live = i => i.status === 'active';
+const getItem = id => state.items.find(i => i.id === id);
+const dueAt = i => { const [h, m] = (i.time || '08:00').split(':').map(Number); const d = fromYmd(i.date); d.setHours(h, m, 0, 0); return d; };
+
+function mutate(fn, msg) {
+  const snap = JSON.stringify(state.items);
+  fn(); save(); render();
+  if (msg) toast(msg, { undo: () => { state.items = JSON.parse(snap); save(); render(); } });
+}
+
+/* ───────── notifications ───────── */
+let swReg = null;
+function permission() { return 'Notification' in window ? Notification.permission : 'unsupported'; }
+async function askPermission() {
+  if (!('Notification' in window)) return toast('Энэ хөтөч мэдэгдлийг дэмжихгүй байна.');
+  const p = await Notification.requestPermission();
+  toast(p === 'granted' ? 'Мэдэгдэл идэвхжлээ 🔔' : 'Мэдэгдэл зөвшөөрөгдөөгүй. Хөтчийн тохиргооноос нээнэ үү.');
+  renderSettingsStatus();
+}
+function when(i, at) {
+  const mins = Math.round((at - Date.now()) / 60000);
+  const t = i.time ? ` ${i.time}` : '';
+  if (mins > 60 * 24) return `${fmtDate(i.date)}${t}`;
+  if (mins > 90) return `Өнөөдөр${t}`;
+  if (mins > 1) return `${mins} минутын дараа${t ? ' · ' + i.time : ''}`;
+  if (mins >= -1) return 'Яг одоо';
+  return `Эхэлсэн${t}`;
+}
+function beep() {
+  try {
+    const A = window.AudioContext || window.webkitAudioContext; if (!A) return;
+    const c = new A(), o = c.createOscillator(), g = c.createGain();
+    o.type = 'sine'; o.frequency.value = 880; g.gain.setValueAtTime(.0001, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(.18, c.currentTime + .03); g.gain.exponentialRampToValueAtTime(.0001, c.currentTime + .6);
+    o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + .65);
+  } catch (e) { }
+}
+let flashT = null;
+function flashTitle(t) {
+  const orig = document.title; let on = false; clearInterval(flashT);
+  if (!document.hidden) return;
+  flashT = setInterval(() => { document.title = (on = !on) ? '🔔 ' + t : orig; if (!document.hidden) { clearInterval(flashT); document.title = orig; } }, 900);
+}
+function showNotice(title, body, tag, important) {
+  toast(`<b>${esc(title)}</b><br><span style="color:var(--muted)">${esc(body)}</span>`, { bell: true, html: true, sticky: true });
+  beep(); flashTitle(title);
+  if (state.settings.notify && permission() === 'granted') {
+    const opts = { body, tag, icon: 'icon-192.png', badge: 'icon-192.png', requireInteraction: !!important, renotify: true };
+    const viaPage = () => { try { new Notification(title, opts); } catch (_) { } };
+    if (swReg && swReg.showNotification) swReg.showNotification(title, opts).catch(viaPage); else viaPage();
+  }
+}
+function notify(i, at) {
+  showNotice(`${TYPES[i.type].e} ${i.title}`, [when(i, at), i.person, i.place].filter(Boolean).join(' · '), i.id, i.important);
+}
+function tick() {
+  if (!me) return;
+  const now = Date.now();
+  let changed = false;
+  state.items.forEach(i => {
+    if (!live(i) || i.remind == null || i.remind < 0) return;
+    const at = dueAt(i).getTime();
+    const endMs = i.time && i.endTime ? (() => { const [h, m] = i.endTime.split(':').map(Number); const d = fromYmd(i.date); d.setHours(h, m, 0, 0); return d.getTime(); })() : at;
+    const key = `${i.id}|${i.date}|${i.time}|${i.remind}`;
+    if (now >= at - i.remind * 60000 && now < Math.max(endMs, at) + 3 * 3600e3 && !state.fired[key]) {
+      state.fired[key] = 1; changed = true; notify(i, at);
+    }
+  });
+  if (changed) save();
+}
+function testNotice() {
+  if (permission() === 'default') return askPermission().then(testNotice);
+  showNotice('🔔 Туршилтын сануулга', 'Сануулга зөв ажиллаж байна. Ийм хэлбэрээр уулзалтын өмнө мэдэгдэнэ.', 'test', false);
+}
+
+/* ───────── toast & modal ───────── */
+function toast(msg, o = {}) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (o.bell ? ' bell' : '');
+  el.innerHTML = `<div class="tx">${o.html ? msg : esc(msg)}</div>` + (o.undo ? '<button>Буцаах</button>' : '') + (o.sticky ? '<button data-x>OK</button>' : '');
+  const kill = () => el.remove();
+  if (o.undo) el.querySelector('button').onclick = () => { o.undo(); kill(); };
+  const x = el.querySelector('[data-x]'); if (x) x.onclick = kill;
+  $('#toasts').appendChild(el);
+  if (!o.sticky) setTimeout(kill, o.undo ? 6000 : 3500);
+}
+function openModal(html, mount) {
+  closeModal();
+  const root = $('#modalRoot');
+  root.innerHTML = `<div class="back"><div class="modal" role="dialog">${html}</div></div>`;
+  hydrateIcons(root);
+  const back = root.firstChild;
+  back.addEventListener('mousedown', e => { if (e.target === back) closeModal(); });
+  mount && mount(root.querySelector('.modal'));
+}
+const closeModal = () => { $('#modalRoot').innerHTML = ''; };
+addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+/* ───────── rendering ───────── */
+const NAV = [['today', 'home', 'Өнөөдөр'], ['week', 'week', '7 хоног'], ['month', 'month', 'Сар'], ['year', 'year', 'Жил'], ['all', 'list', 'Бүгд']];
+
+const isAdmin = () => me && me.role === 'admin';
+function render() {
+  const nav = isAdmin() ? NAV.concat([['admin', 'shield', 'Админ']]) : NAV;
+  const btns = nav.map(([k, ic, l]) => `<button class="${ui.view === k ? 'on' : ''}" data-view="${k}">${ico(ic)}${l}</button>`).join('');
+  $('#nav').innerHTML = btns; $('#tabbar').innerHTML = btns;
+  $('#tabbar').style.gridTemplateColumns = `repeat(${nav.length},1fr)`;
+  $('#schoolName').textContent = state.settings.school || '';
+  $('#whoami').innerHTML = me ? `<div class="av">${esc(me.name.slice(0, 1).toUpperCase())}</div><div style="min-width:0"><b>${esc(me.name)}</b><span>${isAdmin() ? 'Админ' : 'Сэтгэл зүйч'}</span></div>` : '';
+  const v = { today: vToday, week: vWeek, month: vMonth, year: vYear, all: vAll, admin: vAdmin }[ui.view] || vToday;
+  $('#main').innerHTML = v();
+  hydrateIcons();
+}
+
+function card(i) {
+  const time = i.time ? `${i.time}${i.endTime ? '–' + i.endTime : ''}` : '';
+  const span = i.endDate && i.endDate > i.date ? `${fmtShort(i.date)} → ${fmtShort(i.endDate)}` : '';
+  const act = (a, ic, t, cls = '') => `<button class="act ${cls}" data-act="${a}" data-id="${i.id}" title="${t}" aria-label="${t}">${ico(ic)}</button>`;
+  const inactive = !live(i);
+  return `<article class="card ${i.type} ${i.status} ${i.important ? 'imp' : ''}">
+    <div class="stk">${stkHtml(i.sticker, i.type)}</div>
+    <div class="body">
+      <div class="t">${esc(i.title)}</div>
+      <div class="meta">
+        ${time ? `<span>🕒 ${time}</span>` : '<span>🗓 Өдөржин</span>'}
+        ${span ? `<span>${span}</span>` : ''}
+        ${i.person ? `<span>👤 ${esc(i.person)}</span>` : ''}
+        ${i.place ? `<span>📍 ${esc(i.place)}</span>` : ''}
+        ${live(i) && i.remind >= 0 ? `<span>🔔 ${remindLabel(i.remind)}</span>` : ''}
+      </div>
+      ${i.note ? `<div class="note">${esc(i.note)}</div>` : ''}
+      <div class="badges">
+        <span class="badge ${TYPES[i.type].c}">${TYPES[i.type].l}</span>
+        ${i.important ? '<span class="badge imp">★ Чухал</span>' : ''}
+        ${i.status === 'done' ? '<span class="badge">✓ Хийгдсэн</span>' : ''}
+        ${i.status === 'cancelled' ? '<span class="badge warn">Цуцлагдсан</span>' : ''}
+        ${i.postponed ? `<span class="badge warn">Хойшилсон ×${i.postponed}</span>` : ''}
+      </div>
+    </div>
+    <div class="acts"><div class="row">
+      ${inactive ? act('restore', 'undo', 'Сэргээх', 'ok') : act('done', 'check', 'Хийгдсэн', 'ok') + act('postpone', 'clock', 'Хойшлуулах') + act('cancel', 'x', 'Цуцлах', 'no')}
+    </div><div class="row">${act('edit', 'edit', 'Засах')}${act('del', 'trash', 'Устгах', 'no')}</div></div>
+  </article>`;
+}
+const REMIND = [[-1, 'Сануулахгүй'], [0, 'Цаг болоход'], [10, '10 минутын өмнө'], [30, '30 минутын өмнө'], [60, '1 цагийн өмнө'], [180, '3 цагийн өмнө'], [1440, '1 өдрийн өмнө'], [2880, '2 өдрийн өмнө'], [10080, '7 хоногийн өмнө']];
+const remindLabel = m => (REMIND.find(r => r[0] === m) || [0, m + ' мин өмнө'])[1];
+const empty = (t, s = '') => `<div class="empty"><div class="big">🌿</div><b>${t}</b><div>${s}</div></div>`;
+const head = (h, sub, tools = '') => `<div class="top"><div><h1>${h}</h1><div class="sub">${sub}</div></div><div class="tools">${tools}</div></div>`;
+
+function vToday() {
+  const t = today(), h = new Date().getHours();
+  const hello = h < 12 ? 'Өглөөний мэнд' : h < 18 ? 'Өдрийн мэнд' : 'Оройн мэнд';
+  const list = itemsOn(t);
+  const active = list.filter(live);
+  const nowStr = `${pad(new Date().getHours())}:${pad(new Date().getMinutes())}`;
+  const nxt = active.filter(i => i.time && i.time >= nowStr)[0] || active.filter(i => !i.time)[0];
+  const week = [...Array(7)].map((_, k) => addDays(t, k)).flatMap(itemsOn).filter((i, k, a) => a.indexOf(i) === k);
+  const upcoming = state.items.filter(i => live(i) && i.date > t && i.date <= addDays(t, 14)).sort(sortFn).slice(0, 6);
+  const impt = state.items.filter(i => live(i) && i.important && endOf(i) >= t && !(i.date <= t)).sort(sortFn).slice(0, 4);
+  return head(`${hello} 👋`, fmtDate(t), `<button class="btn primary" data-act="add">${ico('plus')} Нэмэх</button>`) + `
+  <div class="hero">
+    <div class="panel next"><h3>Дараагийн</h3>
+      ${nxt ? `<div class="nt">${stkHtml(nxt.sticker, nxt.type)} ${esc(nxt.title)}</div><div class="nm">${nxt.time ? '🕒 ' + nxt.time : 'Өдөржин'}${nxt.person ? ' · 👤 ' + esc(nxt.person) : ''}${nxt.place ? ' · 📍 ' + esc(nxt.place) : ''}</div>`
+      : `<div class="nt">Өнөөдөр чөлөөтэй 🌤</div><div class="nm">Шинэ төлөвлөгөө нэмэх эсвэл амрах цаг.</div>`}
+    </div>
+    <div class="panel"><h3>Тоон мэдээлэл</h3><div class="stats">
+      <div class="stat"><b>${active.length}</b><span>өнөөдөр</span></div>
+      <div class="stat"><b>${week.filter(live).length}</b><span>7 хоногт</span></div>
+      <div class="stat"><b>${state.items.filter(i => live(i) && i.type === 'session' && i.date >= t).length}</b><span>уулзалт</span></div>
+    </div></div>
+  </div>
+  <h2 class="sec">Өнөөдрийн хуваарь</h2>
+  <div class="list">${list.length ? list.map(card).join('') : empty('Өнөөдөр төлөвлөгөө алга', '"Нэмэх" товчоор эхлээрэй')}</div>
+  ${impt.length ? `<h2 class="sec">★ Чухал төлөвлөгөө</h2><div class="list">${impt.map(card).join('')}</div>` : ''}
+  ${upcoming.length ? `<h2 class="sec">Ойрын 2 долоо хоног</h2><div class="list">${upcoming.map(card).join('')}</div>` : ''}`;
+}
+
+function chip(i) {
+  return `<button class="chip ${i.type} ${i.important ? 'imp' : ''} ${i.status}" data-act="edit" data-id="${i.id}">
+    <span class="cs">${stkHtml(i.sticker, i.type)}</span><span><b>${esc(i.title)}</b><small>${i.time || 'Өдөржин'}${i.person ? ' · ' + esc(i.person) : ''}</small></span></button>`;
+}
+function vWeek() {
+  const days = [...Array(7)].map((_, k) => addDays(ui.weekStart, k));
+  const t = today();
+  const a = fromYmd(days[0]), b = fromYmd(days[6]);
+  const label = `${a.getMonth() + 1}/${a.getDate()} – ${b.getMonth() + 1}/${b.getDate()}`;
+  const nav = `<div class="nav2"><button class="ibtn" data-act="wk" data-n="-7">${ico('left')}</button><div class="lbl">${label}</div><button class="ibtn" data-act="wk" data-n="7">${ico('right')}</button><button class="btn sm" data-act="wk" data-n="0">Энэ 7 хоног</button></div>`;
+  return head('7 хоногийн төлөвлөгөө', `${a.getFullYear()} он`, nav) + `<div class="week">${days.map(d => `
+    <section class="day ${d === t ? 'today' : ''}">
+      <div class="dh"><span>${WD[wdOf(d)]}</span><b>${fromYmd(d).getDate()}</b></div>
+      ${itemsOn(d).map(chip).join('')}
+      <button class="dadd" data-act="add" data-date="${d}">+ нэмэх</button>
+    </section>`).join('')}</div>`;
+}
+
+const monthName = m => `${Number(m.slice(5))}-р сар`;
+function vMonth() {
+  const [y, m] = ui.month.split('-').map(Number);
+  const first = `${ui.month}-01`;
+  const gridStart = startOfWeek(first);
+  const t = today();
+  const cells = [...Array(42)].map((_, k) => addDays(gridStart, k));
+  const nav = `<div class="nav2"><button class="ibtn" data-act="mo" data-n="-1">${ico('left')}</button><div class="lbl">${y} · ${monthName(ui.month)}</div><button class="ibtn" data-act="mo" data-n="1">${ico('right')}</button><button class="btn sm" data-act="mo" data-n="0">Өнөөдөр</button></div>`;
+  const selItems = itemsOn(ui.sel);
+  return head('Сарын төлөвлөгөө', 'Өдөр дээр дарж дэлгэрэнгүйг харна', nav) + `
+  <div class="mgrid">${WD.map(w => `<div class="wd">${w}</div>`).join('')}${cells.map(d => {
+    const its = itemsOn(d).filter(i => i.status !== 'cancelled');
+    const imp = its.some(i => i.important && live(i));
+    return `<button class="cell ${d.slice(0, 7) !== ui.month ? 'out' : ''} ${d === t ? 'today' : ''} ${d === ui.sel ? 'sel' : ''}" data-act="sel" data-date="${d}">
+      <span class="n">${fromYmd(d).getDate()}</span>${imp ? '<i class="dot"></i>' : ''}
+      <span class="stks">${its.slice(0, 3).map(i => `<span>${stkHtml(i.sticker, i.type)}</span>`).join('')}${its.length > 3 ? `<span class="more">+${its.length - 3}</span>` : ''}</span></button>`;
+  }).join('')}</div>
+  <h2 class="sec">${fmtDate(ui.sel)} <button class="btn sm" data-act="add" data-date="${ui.sel}" style="margin-left:auto">${ico('plus')} Нэмэх</button></h2>
+  <div class="list">${selItems.length ? selItems.map(card).join('') : empty('Энэ өдөр төлөвлөгөө алга')}</div>`;
+}
+
+function vYear() {
+  const t = today();
+  const yItems = state.items.filter(i => i.date.startsWith(ui.year) || endOf(i).startsWith(ui.year) || (i.date < `${ui.year}-01-01` && endOf(i) >= `${ui.year}-01-01`));
+  const nav = `<div class="nav2"><button class="ibtn" data-act="yr" data-n="-1">${ico('left')}</button><div class="lbl">${ui.year} он</div><button class="ibtn" data-act="yr" data-n="1">${ico('right')}</button></div>`;
+  const minis = [...Array(12)].map((_, mi) => {
+    const first = `${ui.year}-${pad(mi + 1)}-01`;
+    const dim = new Date(ui.year, mi + 1, 0).getDate();
+    const lead = wdOf(first);
+    const cnt = state.items.filter(i => live(i) && i.date.slice(0, 7) === first.slice(0, 7)).length;
+    let cells = '<i class="e"></i>'.repeat(lead);
+    for (let d = 1; d <= dim; d++) {
+      const ds = `${ui.year}-${pad(mi + 1)}-${pad(d)}`;
+      const its = itemsOn(ds).filter(live);
+      const lv = its.length === 0 ? '' : its.length === 1 ? 'l1' : its.length === 2 ? 'l2' : 'l3';
+      cells += `<i class="${lv} ${its.some(i => i.important) ? 'im' : ''} ${ds === t ? 'td' : ''}">${d}</i>`;
+    }
+    return `<button class="mini" data-act="goMonth" data-m="${first.slice(0, 7)}"><div class="mh">${mi + 1}-р сар<span>${cnt ? cnt + ' үйл явдал' : ''}</span></div><div class="mm">${cells}</div></button>`;
+  }).join('');
+  return head('Жилийн төлөвлөгөө', `${yItems.filter(live).length} идэвхтэй төлөвлөгөө · улаан хүрээ = чухал өдөр`, nav) + `<div class="ygrid">${minis}</div>`;
+}
+
+function vAll() {
+  const F = [['all', 'Бүгд'], ['session', 'Уулзалт'], ['training', 'Сургалт'], ['plan', 'Төлөвлөгөө'], ['imp', '★ Чухал'], ['cancelled', 'Цуцлагдсан'], ['done', 'Хийгдсэн']];
+  const q = ui.q.trim().toLowerCase();
+  let list = state.items.filter(i => {
+    if (['session', 'training', 'plan'].includes(ui.filter)) { if (i.type !== ui.filter) return false; }
+    else if (ui.filter === 'imp') { if (!i.important) return false; }
+    else if (ui.filter === 'cancelled' || ui.filter === 'done') { if (i.status !== ui.filter) return false; }
+    if (q && !(`${i.title} ${i.person} ${i.place} ${i.note}`.toLowerCase().includes(q))) return false;
+    return true;
+  }).sort(sortFn);
+  let html = '', cur = '';
+  list.forEach(i => { const m = i.date.slice(0, 7); if (m !== cur) { cur = m; html += `<h2 class="sec">${m.slice(0, 4)} · ${monthName(m)}</h2>`; } html += `<div class="list" style="margin-bottom:10px">${card(i)}</div>`; });
+  return head('Бүх төлөвлөгөө', `${state.items.length} бичлэг`, `<button class="btn" data-act="ics">${ico('download')} Календарь (.ics)</button>`) + `
+  <div class="filters"><input class="search" id="q" placeholder="Хайх: нэр, сурагч, тэмдэглэл…" value="${esc(ui.q)}">${F.map(([k, l]) => `<button class="fchip ${ui.filter === k ? 'on' : ''}" data-act="flt" data-k="${k}">${l}</button>`).join('')}</div>
+  ${html || empty('Юу ч олдсонгүй')}`;
+}
+
+/* ───────── item form ───────── */
+const WHO = ['Сурагч', 'Эцэг эх', 'Багш', 'Анги удирдсан багш', 'Нийгмийн ажилтан', 'Захирал', 'Сургалтын менежер', 'Эмч, сувилагч', 'Номын санч', 'Нярав', 'Хоолны ажилтан', 'Манаач, хамгаалагч', 'Цэвэрлэгч', 'Бусад ажилтан', 'Анги хамт олон', 'Захиргаа'];
+const timeOpts = (sel, blank) => `<option value="">${blank}</option>` + (() => { let o = ''; for (let m = 6 * 60; m <= 21 * 60 + 55; m += 5) { const v = `${pad(Math.floor(m / 60))}:${pad(m % 60)}`; o += `<option ${v === sel ? 'selected' : ''}>${v}</option>`; } if (sel && m > 0 && !o.includes(`>${sel}<`)) o += `<option selected>${sel}</option>`; return o; })();
+const addMin = (t, n) => { const [h, m] = t.split(':').map(Number), x = h * 60 + m + n; return x >= 24 * 60 ? '23:55' : `${pad(Math.floor(x / 60))}:${pad(x % 60)}`; };
+const DEF_REMIND = { session: 30, training: 60, plan: 1440 };
+
+/* сар/он урьдчилан сонгогдсон, зөвхөн өдрийг товшиж сонгодог */
+function dayPicker(el, o) {
+  const cy = new Date().getFullYear();
+  const draw = () => {
+    const dim = new Date(o.y, o.m, 0).getDate();
+    if (o.d > dim) o.d = 0;
+    const lead = wdOf(`${o.y}-${pad(o.m)}-01`), t = today();
+    const ys = []; for (let y = Math.min(cy - 1, o.y); y <= Math.max(cy + 3, o.y); y++) ys.push(y);
+    el.innerHTML = `<div class="two">
+      <select class="in" data-k="m">${[...Array(12)].map((_, k) => `<option value="${k + 1}" ${k + 1 === o.m ? 'selected' : ''}>${k + 1}-р сар</option>`).join('')}</select>
+      <select class="in" data-k="y">${ys.map(y => `<option ${y === o.y ? 'selected' : ''}>${y}</option>`).join('')}</select></div>
+      <div class="dgrid">${WD.map(w => `<span class="dw">${w}</span>`).join('')}${'<span></span>'.repeat(lead)}${[...Array(dim)].map((_, k) => {
+        const ds = `${o.y}-${pad(o.m)}-${pad(k + 1)}`;
+        return `<button type="button" data-d="${k + 1}" class="${o.d === k + 1 ? 'on' : ''} ${ds === t ? 'td' : ''}">${k + 1}</button>`;
+      }).join('')}</div>`;
+    el.querySelectorAll('select').forEach(s => s.onchange = () => { o[s.dataset.k] = +s.value; draw(); });
+    el.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { o.d = o.d === +b.dataset.d && o.optional ? 0 : +b.dataset.d; draw(); });
+  };
+  draw();
+}
+const pickerVal = o => o.d ? `${o.y}-${pad(o.m)}-${pad(o.d)}` : '';
+
+function openForm(id, presetDate) {
+  const ex = id ? getItem(id) : null;
+  const f = Object.assign({
+    type: 'session', title: '', date: presetDate || '', endDate: '', time: '', endTime: '',
+    person: '', place: '', note: '', sticker: '', important: false, remind: 30, status: 'active',
+  }, ex || {});
+  const base = f.date ? fromYmd(f.date) : fromYmd((ui.view === 'month' || ui.view === 'all' ? ui.month : today().slice(0, 7)) + '-01');
+  const sp = { y: base.getFullYear(), m: base.getMonth() + 1, d: f.date ? base.getDate() : 0 };
+  const eb = f.endDate ? fromYmd(f.endDate) : base;
+  const ep = { y: eb.getFullYear(), m: eb.getMonth() + 1, d: f.endDate ? eb.getDate() : 0, optional: true };
+  const who = new Set((f.person || '').split(',').map(s => s.trim()).filter(Boolean));
+  let multi = !!f.endDate;
+  openModal(`
+    <h2>${ex ? 'Засварлах' : 'Шинэ нэмэх'}</h2>
+    <div class="fld"><label>Төрөл</label><div class="seg3">${Object.entries(TYPES).map(([k, T]) => `<button type="button" data-t="${k}" class="${f.type === k ? 'on' : ''}">${T.e}<span>${T.l}</span></button>`).join('')}</div></div>
+    <div class="fld"><label>Хэнтэй / хэнд <span style="font-weight:500">(сонгоно)</span></label><div class="chips" id="f-who">${WHO.map(w => `<button type="button" class="fchip ${who.has(w) ? 'on' : ''}" data-w="${w}">${w}</button>`).join('')}</div></div>
+    <div class="fld"><label>Өдөр сонгох</label><div id="f-dp"></div></div>
+    <div class="fld"><button type="button" class="btn sm" id="f-multi" style="align-self:flex-start"></button><div id="f-ep"></div></div>
+    <div class="tsel"><div class="fld"><label>Эхлэх цаг</label><select class="in" id="f-time">${timeOpts(f.time, 'Цаг заахгүй')}</select></div>
+      <div class="fld"><label>Дуусах цаг</label><select class="in" id="f-etime">${timeOpts(f.endTime, '—')}</select></div></div>
+    <div class="fld" style="margin-top:-4px"><label>Үргэлжлэх хугацаа</label><div class="chips" id="f-dur">${[[15, '15 мин'], [30, '30 мин'], [40, '40 мин'], [45, '45 мин'], [60, '1 цаг'], [90, '1.5 цаг'], [120, '2 цаг'], [180, '3 цаг']].map(([n, l]) => `<button type="button" class="fchip" data-n="${n}">${l}</button>`).join('')}</div></div>
+    <div class="fld"><label>Гарчиг <span style="font-weight:500">(заавал биш — хоосон бол автоматаар)</span></label><input class="in" id="f-title" placeholder="Жишээ: 5б ангийн сэтгэл зүйн үнэлгээ" value="${esc(f.title)}"></div>
+    <div class="two"><div class="fld"><label>Байршил</label><input class="in" id="f-place" placeholder="Кабинет, танхим…" value="${esc(f.place)}"></div>
+      <div class="fld"><label>🔔 Сануулга</label><select class="in" id="f-rem">${REMIND.map(([v, l]) => `<option value="${v}" ${v === f.remind ? 'selected' : ''}>${l}</option>`).join('')}</select></div></div>
+    <div class="fld"><label>Тэмдэглэл</label><textarea class="in" id="f-note" placeholder="Чухал зүйл, бэлтгэх материал…">${esc(f.note)}</textarea></div>
+    <div class="fld"><label>Чухал эсэх</label><button type="button" class="togg ${f.important ? 'on' : ''}" id="f-imp"></button></div>
+    <div class="fld"><label>Sticker</label>
+      <div class="stkpick"><div class="cur" id="f-cur"></div>
+        <button type="button" class="btn sm" id="f-stkbtn">Sticker сонгох</button>
+        <button type="button" class="btn sm" id="f-stkclr">Арилгах</button></div>
+      <div id="f-sp"></div></div>
+    <div class="mfoot">
+      ${ex ? '<button class="btn danger l" data-m="del">Устгах</button>' : ''}
+      <button class="btn" data-m="close">Болих</button>
+      <button class="btn primary" data-m="save">Хадгалах</button>
+    </div>`, m => {
+    const q = s => m.querySelector(s);
+    const setCur = () => { q('#f-cur').innerHTML = stkHtml(f.sticker, f.type); q('#f-cur').style.opacity = f.sticker ? 1 : .45; };
+    const drawImp = () => { const b = q('#f-imp'); b.classList.toggle('on', f.important); b.innerHTML = `<span class="s">${ico('star', f.important ? 'style="fill:currentColor"' : '')}</span><span>${f.important ? 'Чухал төлөвлөгөө' : 'Энгийн'}</span>`; };
+    const drawMulti = () => { q('#f-multi').textContent = multi ? '− Нэг өдрийн болгох' : '+ Олон хоног үргэлжилнэ (дуусах өдөр)'; q('#f-ep').style.display = multi ? '' : 'none'; if (multi && !q('#f-ep').innerHTML) dayPicker(q('#f-ep'), ep); };
+    setCur(); drawImp(); dayPicker(q('#f-dp'), sp); drawMulti();
+    const markDur = () => { const s = q('#f-time').value, e = q('#f-etime').value; m.querySelectorAll('#f-dur .fchip').forEach(b => b.classList.toggle('on', !!s && !!e && addMin(s, +b.dataset.n) === e)); };
+    q('#f-time').onchange = () => { const s = q('#f-time').value, e = q('#f-etime').value; if (s && e && e <= s) q('#f-etime').value = ''; markDur(); };
+    q('#f-etime').onchange = markDur;
+    m.querySelectorAll('#f-dur .fchip').forEach(b => b.onclick = () => { const s = q('#f-time').value; if (!s) return toast('Эхлээд эхлэх цагаа сонгоно уу.'); q('#f-etime').value = addMin(s, +b.dataset.n); markDur(); });
+    markDur();
+    q('#f-multi').onclick = () => { multi = !multi; if (!multi) ep.d = 0; drawMulti(); };
+    m.querySelectorAll('.seg3 button').forEach(b => b.onclick = () => {
+      const old = f.type; f.type = b.dataset.t;
+      m.querySelectorAll('.seg3 button').forEach(x => x.classList.toggle('on', x === b));
+      if (f.remind === DEF_REMIND[old]) { f.remind = DEF_REMIND[f.type]; q('#f-rem').value = f.remind; }
+      setCur();
+    });
+    m.querySelectorAll('[data-w]').forEach(b => b.onclick = () => { const w = b.dataset.w; who.has(w) ? who.delete(w) : who.add(w); b.classList.toggle('on', who.has(w)); });
+    q('#f-imp').onclick = () => { f.important = !f.important; drawImp(); };
+    q('#f-stkclr').onclick = () => { f.sticker = ''; setCur(); q('#f-sp').innerHTML = ''; };
+    q('#f-stkbtn').onclick = () => {
+      const sp2 = q('#f-sp');
+      if (sp2.innerHTML) { sp2.innerHTML = ''; return; }
+      const draw = () => {
+        sp2.innerHTML = `<div class="sp">
+          ${state.stickers.length ? `<div class="sgl">Миний зургууд</div><div class="sgrid">${state.stickers.map((s, k) => `<button type="button" data-s="${k}" class="${f.sticker === s ? 'on' : ''}"><img src="${s}" alt=""><span class="rm" data-rm="${k}">×</span></button>`).join('')}</div>` : ''}
+          <div class="sgl">Өөрийн зураг оруулах</div>
+          <div class="chips"><label class="btn sm">${ico('upload')} Зураг сонгох<input type="file" accept="image/*" hidden id="f-file"></label>
+          <input class="in" id="f-emo" placeholder="эсвэл emoji бич" maxlength="4" style="width:150px;padding:6px 10px"></div>
+          ${STICKERS.map(([g, arr]) => `<div class="sgl">${g}</div><div class="sgrid">${arr.map(s => `<button type="button" data-e="${s}" class="${f.sticker === s ? 'on' : ''}">${s}</button>`).join('')}</div>`).join('')}
+        </div>`;
+        sp2.querySelectorAll('[data-e]').forEach(b => b.onclick = () => { f.sticker = b.dataset.e; setCur(); draw(); });
+        sp2.querySelectorAll('[data-s]').forEach(b => b.onclick = e => {
+          const rm = e.target.closest('[data-rm]');
+          if (rm) { const k = +rm.dataset.rm; if (f.sticker === state.stickers[k]) f.sticker = ''; state.stickers.splice(k, 1); save(); setCur(); return draw(); }
+          f.sticker = state.stickers[+b.dataset.s]; setCur(); draw();
+        });
+        sp2.querySelector('#f-emo').oninput = e => { const v = e.target.value.trim(); if (v) { f.sticker = v; setCur(); } };
+        sp2.querySelector('#f-file').onchange = async e => {
+          const file = e.target.files[0]; if (!file) return;
+          try { const url = await shrink(file); if (state.stickers.length >= 40) state.stickers.shift(); state.stickers.push(url); f.sticker = url; save(); setCur(); draw(); }
+          catch (err) { toast('Зургийг уншиж чадсангүй.'); }
+        };
+      };
+      draw();
+    };
+    m.onclick = e => {
+      const a = e.target.closest('[data-m]'); if (!a) return;
+      if (a.dataset.m === 'close') return closeModal();
+      if (a.dataset.m === 'del') { closeModal(); return delItem(id); }
+      const date = pickerVal(sp);
+      if (!date) return toast('Өдрөө сонгоно уу.');
+      const end = multi ? pickerVal(ep) : '';
+      const person = WHO.filter(w => who.has(w)).join(', ');
+      const title = q('#f-title').value.trim() || (TYPES[f.type].l + (person ? ' · ' + person : ''));
+      const data = {
+        type: f.type, title, date, endDate: end && end > date ? end : '',
+        time: q('#f-time').value, endTime: q('#f-etime').value, person, place: q('#f-place').value.trim(),
+        note: q('#f-note').value.trim(), sticker: f.sticker, important: f.important, remind: Number(q('#f-rem').value),
+      };
+      closeModal();
+      ui.month = date.slice(0, 7);
+      if (ex) mutate(() => Object.assign(ex, data), 'Хадгалагдлаа');
+      else mutate(() => state.items.push(Object.assign({ id: uid(), status: 'active', postponed: 0 }, data)), 'Нэмэгдлээ ✓');
+      if (data.date.slice(0, 7) > ui.month || data.date.slice(0, 7) < ui.month) { ui.month = data.date.slice(0, 7); }
+      if (data.remind >= 0 && permission() === 'default' && state.settings.notify) askPermissionSoft();
+    };
+  });
+}
+
+function askPermissionSoft() {
+  if (sessionStorage.getItem('asked')) return; sessionStorage.setItem('asked', '1');
+  toast('Сануулга авахын тулд мэдэгдлийг зөвшөөрнө үү.', { undo: askPermission });
+  $('#toasts').lastChild.querySelector('button').textContent = 'Зөвшөөрөх';
+}
+function shrink(file, size = 128) {
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const c = document.createElement('canvas'); c.width = c.height = size;
+      const x = c.getContext('2d'); const s = Math.min(img.width, img.height);
+      x.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
+      URL.revokeObjectURL(url); res(c.toDataURL('image/webp', .85));
+    };
+    img.onerror = rej; img.src = url;
+  });
+}
+
+/* ───────── actions ───────── */
+function delItem(id) {
+  const i = getItem(id); if (!i) return;
+  mutate(() => { state.items = state.items.filter(x => x.id !== id); }, `"${i.title}" устгагдлаа`);
+}
+function postponeForm(id) {
+  const i = getItem(id); if (!i) return;
+  const nd = addDays(i.date, 1);
+  openModal(`<h2>⏩ Хойшлуулах</h2>
+    <p style="margin:0 0 14px;color:var(--muted)"><b style="color:var(--ink)">${esc(i.title)}</b><br>Одоо: ${fmtDate(i.date)}${i.time ? ', ' + i.time : ''}</p>
+    <div class="chips">${[['Маргааш', 1], ['+3 өдөр', 3], ['+1 7 хоног', 7], ['+2 7 хоног', 14], ['+1 сар', 30]].map(([l, n]) => `<button class="fchip" data-add="${n}">${l}</button>`).join('')}</div>
+    <div class="two"><div class="fld"><label>Шинэ өдөр</label><input class="in" type="date" id="p-date" value="${nd}"></div>
+    <div class="fld"><label>Шинэ цаг</label><input class="in" type="time" id="p-time" value="${i.time}"></div></div>
+    <div class="mfoot"><button class="btn" data-m="close">Болих</button><button class="btn primary" data-m="ok">Хойшлуулах</button></div>`, m => {
+    m.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { m.querySelector('#p-date').value = addDays(i.date, +b.dataset.add); });
+    m.onclick = e => {
+      const a = e.target.closest('[data-m]'); if (!a) return;
+      if (a.dataset.m === 'close') return closeModal();
+      const d = m.querySelector('#p-date').value; if (!d) return;
+      const shift = daysBetween(i.date, d), t = m.querySelector('#p-time').value;
+      closeModal();
+      mutate(() => { if (i.endDate) i.endDate = addDays(i.endDate, shift); i.date = d; i.time = t; i.postponed = (i.postponed || 0) + 1; i.status = 'active'; }, `Хойшлогдлоо → ${fmtDate(d)}`);
+    };
+  });
+}
+function settingsForm() {
+  openModal(`<h2>Тохиргоо</h2>
+    <div class="fld"><label>Сургуулийн нэр (хажуу самбарт харагдана)</label><input class="in" id="s-school" value="${esc(state.settings.school)}" placeholder="Жишээ: 12-р сургууль"></div>
+    <div class="fld"><label>🔔 Мэдэгдэл</label><div id="s-status" class="hint" style="margin:0 0 6px"></div>
+      <div class="chips"><button class="btn sm" data-m="perm">Мэдэгдэл зөвшөөрөх</button><button class="btn sm" data-m="test">🔔 Сануулга туршиж үзэх</button></div>
+      <p class="hint">Сануулга нь апп нээлттэй (цонх эсвэл суулгасан апп ажиллаж) байх үед яг цагтаа ирнэ. Апп хаалттай үед ч найдвартай сануулга авахыг хүсвэл ".ics" файл татаж утасны календарьт нэмээрэй.</p></div>
+    <div class="fld"><label>👤 Бүртгэл: ${esc(me.name)} (@${esc(me.username)})</label><div class="chips">
+      <button class="btn sm" data-m="selfpw">${ico('key')} Нууц үг солих</button>
+      ${isAdmin() ? `<button class="btn sm" data-m="admin">${ico('shield')} Админ самбар</button>` : ''}
+      <button class="btn sm danger" data-m="logout">${ico('logout')} Гарах</button></div></div>
+    <div class="fld"><label>Өгөгдөл</label><div class="chips">
+      <button class="btn sm" data-m="export">${ico('download')} Нөөцлөх (JSON)</button>
+      <label class="btn sm">${ico('upload')} Сэргээх<input type="file" accept=".json" hidden id="s-import"></label>
+      <button class="btn sm" data-m="ics">${ico('download')} Календарь (.ics)</button></div>
+      <p class="hint">Өгөгдөл зөвхөн энэ төхөөрөмж дээр хадгалагдана. Утас ↔ компьютер хооронд нөөцлөөд сэргээж шилжүүлнэ.</p></div>
+    <div class="mfoot"><button class="btn l danger" data-m="wipe">Бүгдийг устгах</button><button class="btn primary" data-m="ok">Болсон</button></div>`, m => {
+    renderSettingsStatus();
+    m.querySelector('#s-import').onchange = async e => {
+      try { const d = JSON.parse(await e.target.files[0].text()); if (!Array.isArray(d.items)) throw 0; state = Object.assign(state, d); save(); closeModal(); render(); toast('Сэргээгдлээ ✓'); } catch (_) { toast('Файл буруу байна.'); }
+    };
+    m.onclick = e => {
+      const a = e.target.closest('[data-m]'); if (!a) return;
+      const k = a.dataset.m;
+      if (k === 'ok') { state.settings.school = m.querySelector('#s-school').value.trim(); save(); closeModal(); render(); }
+      if (k === 'perm') askPermission();
+      if (k === 'test') testNotice();
+      if (k === 'logout') logout();
+      if (k === 'selfpw') selfPwForm();
+      if (k === 'admin') { closeModal(); ui.view = 'admin'; render(); }
+      if (k === 'export') download(`төлөвлөгөө-${today()}.json`, JSON.stringify(state), 'application/json');
+      if (k === 'ics') exportIcs();
+      if (k === 'wipe' && confirm('Бүх төлөвлөгөөг устгах уу? Үүнийг буцаах боломжгүй.')) { state.items = []; state.fired = {}; save(); closeModal(); render(); }
+    };
+  });
+}
+function renderSettingsStatus() {
+  const el = $('#s-status'); if (!el) return;
+  const p = permission();
+  el.textContent = { granted: '✅ Идэвхтэй — санууллыг системийн мэдэгдлээр харуулна.', denied: '⛔ Хориглосон — хөтчийн хаягийн талбарын түгжээнээс зөвшөөрнө үү.', default: 'Одоогоор зөвшөөрөөгүй.', unsupported: 'Энэ хөтөч мэдэгдэл дэмжихгүй.' }[p];
+}
+function download(name, text, type) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function exportIcs() {
+  const dt = (d, t) => d.replace(/-/g, '') + (t ? 'T' + t.replace(':', '') + '00' : '');
+  const fold = s => s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+  const ev = state.items.filter(i => i.status !== 'cancelled').map(i => {
+    const L = ['BEGIN:VEVENT', `UID:${i.id}@psy-planner`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').slice(0, 15)}Z`];
+    if (i.time) { L.push(`DTSTART:${dt(i.date, i.time)}`, `DTEND:${dt(endOf(i) === i.date ? i.date : i.date, i.endTime || i.time)}`); }
+    else { L.push(`DTSTART;VALUE=DATE:${dt(i.date)}`, `DTEND;VALUE=DATE:${dt(addDays(endOf(i), 1))}`); }
+    L.push(`SUMMARY:${fold((i.important ? '★ ' : '') + i.title)}`);
+    const desc = [i.person && 'Хэнтэй: ' + i.person, i.note].filter(Boolean).join('\n');
+    if (desc) L.push(`DESCRIPTION:${fold(desc)}`);
+    if (i.place) L.push(`LOCATION:${fold(i.place)}`);
+    if (i.remind >= 0) L.push('BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${fold(i.title)}`, `TRIGGER:-PT${i.remind}M`, 'END:VALARM');
+    L.push('END:VEVENT'); return L.join('\r\n');
+  });
+  download('төлөвлөгөө.ics', ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//psy-planner//MN', 'CALSCALE:GREGORIAN', ...ev, 'END:VCALENDAR'].join('\r\n'), 'text/calendar');
+  toast('.ics файл татагдлаа — утасны календарьд нээж нэмээрэй.');
+}
+
+/* ───────── admin panel ───────── */
+function vAdmin() {
+  if (!isAdmin()) return empty('Админ эрх шаардлагатай');
+  const rows = accounts.map(a => {
+    const n = ((jget(dataKey(a.id), {}).items) || []).length, self = a.id === me.id;
+    return `<div class="acc ${a.active ? '' : 'off'}"><div class="av">${esc(a.name.slice(0, 1).toUpperCase())}</div>
+      <div class="info"><b>${esc(a.name)}</b> ${a.role === 'admin' ? '<span class="badge imp">Админ</span>' : '<span class="badge pl">Сэтгэл зүйч</span>'} ${a.active ? '' : '<span class="badge warn">Идэвхгүй</span>'}
+      <div>@${esc(a.username)} · ${n} бичлэг (энэ төхөөрөмж дээр) · үүсгэсэн ${a.created}</div></div>
+      <div class="btns"><button class="btn sm" data-act="acc-link" data-id="${a.id}">${ico('copy')} Урилга линк</button>
+      <button class="btn sm" data-act="acc-pw" data-id="${a.id}">${ico('key')} Нууц үг</button>
+      ${self ? '' : `<button class="btn sm" data-act="acc-toggle" data-id="${a.id}">${a.active ? 'Идэвхгүй болгох' : 'Идэвхжүүлэх'}</button><button class="btn sm danger" data-act="acc-del" data-id="${a.id}">Устгах</button>`}</div></div>`;
+  }).join('');
+  return head('Админ самбар', 'Сэтгэл зүйчийн бүртгэл үүсгэх, нууц үг сэргээх, идэвхгүй болгох') + `
+  <div class="panel"><h3>Шинэ бүртгэл үүсгэх</h3>
+    <div class="two"><div class="fld"><label>Бүтэн нэр</label><input class="in" id="a-name" placeholder="Жишээ: Б. Сараа"></div>
+    <div class="fld"><label>Нэвтрэх нэр</label><input class="in" id="a-user" placeholder="saraa" autocapitalize="off" autocomplete="off"></div></div>
+    <div class="two"><div class="fld"><label>Нууц үг (6+ тэмдэгт)</label><div style="display:flex;gap:6px"><input class="in" id="a-pw" autocomplete="off"><button class="btn sm" data-act="acc-gen" type="button">Санамсаргүй</button></div></div>
+    <div class="fld"><label>Эрх</label><select class="in" id="a-role"><option value="user">Сэтгэл зүйч</option><option value="admin">Админ</option></select></div></div>
+    <button class="btn primary" data-act="acc-create">+ Бүртгэл үүсгэх</button></div>
+  <h2 class="sec">Бүртгэлүүд (${accounts.length})</h2><div class="list">${rows}</div>
+  <p class="hint" style="margin-top:14px">Бүртгэл үүсгэсний дараа гарах <b>урилга линкийг</b> сэтгэл зүйчид илгээнэ. Тэр линкийг өөрийн утас/компьютер дээрээ нэг удаа нээгээд, таны өгсөн нууц үгээр нэвтэрнэ. Төлөвлөгөөний өгөгдөл төхөөрөмж бүр дээр тусдаа хадгалагдана.</p>`;
+}
+function credsModal(a, pw, title) {
+  const link = inviteLink(a);
+  openModal(`<h2>${title}</h2><div class="cred">Нэр: ${esc(a.name)}<br>Нэвтрэх нэр: <b>${esc(a.username)}</b><br>Нууц үг: <b>${esc(pw)}</b></div>
+    <p class="hint">Нууц үгийг одоо л харагдана — хадгалж аваад сэтгэл зүйчид өгнө үү. Урилга линкийг нууц үгээс тусад нь илгээнэ.</p>
+    <div class="mfoot"><button class="btn" data-m="copycred">${ico('copy')} Нэр, нууц үг</button><button class="btn" data-m="copylink">${ico('copy')} Урилга линк</button><button class="btn primary" data-m="ok">Болсон</button></div>`, m => {
+    m.onclick = e => { const k = e.target.closest('[data-m]')?.dataset.m; if (!k) return;
+      if (k === 'copycred') copyText(`Нэвтрэх нэр: ${a.username}\nНууц үг: ${pw}\nХолбоос: ${link}`); if (k === 'copylink') copyText(link); if (k === 'ok') closeModal(); };
+  });
+}
+function adminAction(act, id) {
+  const acc = accounts.find(a => a.id === id);
+  if (act === 'acc-gen') { $('#a-pw').value = genPw(); return; }
+  if (act === 'acc-create') {
+    const name = $('#a-name').value.trim(), user = $('#a-user').value.trim().toLowerCase(), pw = $('#a-pw').value, role = $('#a-role').value;
+    if (!name || !user) return toast('Нэр болон нэвтрэх нэрийг бөглөнө үү.');
+    if (!/^[a-z0-9._-]{3,}$/.test(user)) return toast('Нэвтрэх нэр: 3+ латин үсэг/тоо (. _ - зөвшөөрнө).');
+    if (accounts.some(a => a.username === user)) return toast('Энэ нэвтрэх нэр бүртгэлтэй байна.');
+    if (pw.length < 6) return toast('Нууц үг 6-аас дээш тэмдэгттэй байх ёстой.');
+    const a = makeAcc({ name, username: user, password: pw, role }); accounts.push(a); saveAcc(); render(); credsModal(a, pw, 'Бүртгэл үүслээ ✓'); return;
+  }
+  if (!acc) return;
+  if (act === 'acc-link') return copyText(inviteLink(acc));
+  if (act === 'acc-toggle') { acc.active = !acc.active; saveAcc(); return render(); }
+  if (act === 'acc-del') { if (confirm(`"${acc.name}" бүртгэлийг устгах уу? Энэ төхөөрөмж дээрх төлөвлөгөө нь мөн устна.`)) { accounts = accounts.filter(a => a.id !== id); try { localStorage.removeItem(dataKey(id)); } catch (e) { } saveAcc(); render(); } return; }
+  if (act === 'acc-pw') {
+    const np = genPw();
+    openModal(`<h2>Нууц үг солих</h2><p style="margin:0 0 12px;color:var(--muted)">${esc(acc.name)} (@${esc(acc.username)})</p>
+      <div class="fld"><label>Шинэ нууц үг</label><input class="in" id="np" value="${np}"></div>
+      <div class="mfoot"><button class="btn" data-m="close">Болих</button><button class="btn primary" data-m="ok">Хадгалах</button></div>`, m => {
+      m.onclick = e => { const k = e.target.closest('[data-m]')?.dataset.m; if (!k) return; if (k === 'close') return closeModal();
+        const v = m.querySelector('#np').value; if (v.length < 6) return toast('6-аас дээш тэмдэгт оруулна уу.');
+        acc.salt = uid() + uid(); acc.hash = hashPw(v, acc.salt); saveAcc(); credsModal(acc, v, 'Нууц үг солигдлоо'); };
+    });
+  }
+}
+function selfPwForm() {
+  openModal(`<h2>Нууц үгээ солих</h2>
+    <div class="fld"><label>Одоогийн нууц үг</label><input class="in" type="password" id="p0" autocomplete="current-password"></div>
+    <div class="fld"><label>Шинэ нууц үг (6+)</label><input class="in" type="password" id="p1" autocomplete="new-password"></div>
+    <div class="mfoot"><button class="btn" data-m="close">Болих</button><button class="btn primary" data-m="ok">Хадгалах</button></div>`, m => {
+    m.onclick = e => { const k = e.target.closest('[data-m]')?.dataset.m; if (!k) return; if (k === 'close') return closeModal();
+      if (hashPw(m.querySelector('#p0').value, me.salt) !== me.hash) return toast('Одоогийн нууц үг буруу байна.');
+      const v = m.querySelector('#p1').value; if (v.length < 6) return toast('Шинэ нууц үг 6-аас дээш тэмдэгттэй байх ёстой.');
+      me.salt = uid() + uid(); me.hash = hashPw(v, me.salt); saveAcc(); closeModal(); toast('Нууц үг солигдлоо ✓'); };
+  });
+}
+
+/* ───────── auth ───────── */
+let fails = 0, lockUntil = 0;
+function authScreen(mode, note) {
+  document.body.classList.add('authing');
+  const setup = mode === 'setup';
+  $('#auth').innerHTML = `<form class="acard" id="af" autocomplete="on"><img class="logo" src="icon.svg" alt="">
+    <h1>${setup ? 'Админ бүртгэл үүсгэх' : 'Нэвтрэх'}</h1>
+    <p class="s">${setup ? 'Эхний удаа — таны бүртгэл админ болно. Дараа нь сэтгэл зүйч нарын бүртгэлийг та үүсгэнэ.' : 'Бүртгэлийг админ үүсгэдэг. Нэвтрэх нэр, нууц үгээ оруулна уу.'}</p>
+    ${note ? `<p class="s" style="color:var(--accent);font-weight:600">${esc(note)}</p>` : ''}
+    ${setup ? '<div class="fld"><label>Бүтэн нэр</label><input class="in" id="x-name" required></div>' : ''}
+    <div class="fld"><label>Нэвтрэх нэр</label><input class="in" id="x-user" required autocapitalize="off" autocomplete="username"></div>
+    <div class="fld"><label>Нууц үг</label><input class="in" id="x-pw" type="password" required autocomplete="${setup ? 'new-password' : 'current-password'}"></div>
+    ${setup ? '<div class="fld"><label>Нууц үг давтах</label><input class="in" id="x-pw2" type="password" required autocomplete="new-password"></div>' : ''}
+    <button class="btn primary" type="submit">${setup ? 'Үүсгэх' : 'Нэвтрэх'}</button><div class="err" id="x-err"></div></form>`;
+  const err = t => { $('#x-err').textContent = t; };
+  $('#af').onsubmit = e => {
+    e.preventDefault();
+    const user = $('#x-user').value.trim().toLowerCase(), pw = $('#x-pw').value;
+    if (setup) {
+      const name = $('#x-name').value.trim();
+      if (!/^[a-z0-9._-]{3,}$/.test(user)) return err('Нэвтрэх нэр: 3+ латин үсэг/тоо.');
+      if (pw.length < 6) return err('Нууц үг 6-аас дээш тэмдэгттэй байх ёстой.');
+      if (pw !== $('#x-pw2').value) return err('Нууц үг таарахгүй байна.');
+      const a = makeAcc({ name, username: user, password: pw, role: 'admin' }); accounts = [a]; saveAcc();
+      try { const old = localStorage.getItem(LEGACY_KEY); if (old) localStorage.setItem(dataKey(a.id), old); } catch (_) { }
+      localStorage.setItem(SES_KEY, a.id); return location.reload();
+    }
+    if (Date.now() < lockUntil) return err(`Хэт олон оролдлоо. ${Math.ceil((lockUntil - Date.now()) / 1000)} секунд хүлээнэ үү.`);
+    const a = accounts.find(x => x.username === user);
+    if (!a || hashPw(pw, a.salt) !== a.hash) { if (++fails >= 5) { lockUntil = Date.now() + 30000; fails = 0; } return err('Нэвтрэх нэр эсвэл нууц үг буруу.'); }
+    if (!a.active) return err('Таны бүртгэл идэвхгүй болсон. Админтайгаа холбогдоно уу.');
+    localStorage.setItem(SES_KEY, a.id); location.reload();
+  };
+  setTimeout(() => $(setup ? '#x-name' : '#x-user').focus(), 50);
+}
+function logout() { try { localStorage.removeItem(SES_KEY); } catch (e) { } location.reload(); }
+
+/* ───────── events ───────── */
+document.addEventListener('click', e => {
+  const v = e.target.closest('[data-view]'); if (v) { ui.view = v.dataset.view; render(); scrollTo(0, 0); return; }
+  const a = e.target.closest('[data-act]'); if (!a) return;
+  const id = a.dataset.id, act = a.dataset.act, n = Number(a.dataset.n);
+  switch (act) {
+    case 'add': openForm(null, a.dataset.date); break;
+    case 'edit': openForm(id); break;
+    case 'settings': settingsForm(); break;
+    case 'postpone': postponeForm(id); break;
+    case 'done': { const i = getItem(id); mutate(() => i.status = 'done', 'Хийгдсэн гэж тэмдэглэв ✓'); break; }
+    case 'cancel': { const i = getItem(id); if (confirm(`"${i.title}" цуцлах уу?`)) mutate(() => i.status = 'cancelled', 'Цуцлагдлаа'); break; }
+    case 'restore': { const i = getItem(id); mutate(() => i.status = 'active', 'Сэргээгдлээ'); break; }
+    case 'del': if (confirm('Устгах уу?')) delItem(id); break;
+    case 'wk': ui.weekStart = n === 0 ? startOfWeek(today()) : addDays(ui.weekStart, n); render(); break;
+    case 'mo': { if (n === 0) { ui.month = today().slice(0, 7); ui.sel = today(); } else { const d = fromYmd(ui.month + '-01'); d.setMonth(d.getMonth() + n); ui.month = ymd(d).slice(0, 7); } render(); break; }
+    case 'yr': ui.year += n; render(); break;
+    case 'sel': ui.sel = a.dataset.date; if (a.dataset.date.slice(0, 7) !== ui.month) ui.month = a.dataset.date.slice(0, 7); render(); break;
+    case 'goMonth': ui.month = a.dataset.m; ui.view = 'month'; ui.sel = a.dataset.m === today().slice(0, 7) ? today() : a.dataset.m + '-01'; render(); scrollTo(0, 0); break;
+    case 'flt': ui.filter = a.dataset.k; render(); break;
+    case 'ics': exportIcs(); break;
+    case 'logout': logout(); break;
+    case 'selfpw': selfPwForm(); break;
+    default: if (act.startsWith('acc-')) adminAction(act, id);
+  }
+});
+document.addEventListener('input', e => { if (e.target.id === 'q') { ui.q = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#q'); q.focus(); q.setSelectionRange(pos, pos); } });
+
+/* ───────── boot ───────── */
+function startApp() {
+  hydrateIcons();
+  render();
+  tick(); setInterval(tick, 10000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { tick(); if (ui.view === 'today') render(); } });
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready).then(r => { swReg = r; }).catch(() => { });
+  }
+}
+function boot() {
+  let note = '';
+  if (location.hash.startsWith('#invite=')) {
+    try {
+      const inv = b64d(location.hash.slice(8)); if (!inv.username || !inv.hash || !inv.salt) throw 0;
+      const k = accounts.findIndex(a => a.id === inv.id || a.username === inv.username);
+      const rec = { id: inv.id, name: inv.name, username: inv.username, salt: inv.salt, hash: inv.hash, role: inv.role === 'admin' ? 'admin' : 'user' };
+      if (k >= 0) Object.assign(accounts[k], rec); else accounts.push(Object.assign({ active: true, created: today() }, rec));
+      saveAcc(); note = `Бүртгэл бэлэн боллоо: @${inv.username}. Админаас авсан нууц үгээрээ нэвтэрнэ үү.`;
+    } catch (e) { note = 'Урилга линк буруу байна.'; }
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+  if (!accounts.length) return authScreen('setup');
+  const a = accounts.find(x => x.id === localStorage.getItem(SES_KEY) && x.active);
+  if (!a) return authScreen('login', note);
+  me = a; KEY = dataKey(a.id); loadState();
+  document.body.classList.remove('authing');
+  startApp();
+}
+boot();
+</script>
+</body>
+</html>
+
