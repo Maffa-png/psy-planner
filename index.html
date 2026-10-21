@@ -586,7 +586,7 @@ function vToday() {
   const week = [...Array(7)].map((_, k) => addDays(t, k)).flatMap(itemsOn).filter((i, k, a) => a.indexOf(i) === k);
   const upcoming = state.items.filter(i => live(i) && i.date > t && i.date <= addDays(t, 14)).sort(sortFn).slice(0, 6);
   const impt = state.items.filter(i => live(i) && i.important && endOf(i) >= t && !(i.date <= t)).sort(sortFn).slice(0, 4);
-  return head(`${hello} 👋`, `${fmtDate(t)} · <span class="syncbadge">${badge()}</span>`, `<button class="btn" data-act="transfer">📲 Шилжүүлэх</button><button class="btn primary" data-act="add">${ico('plus')} Нэмэх</button>`) + `
+  return head(`${hello} 👋`, `${fmtDate(t)} · <span class="syncbadge">${badge()}</span>`, `<button class="btn primary" data-act="add">${ico('plus')} Нэмэх</button>`) + `
   <div class="hero">
     <div class="panel next"><h3>Дараагийн</h3>
       ${nxt ? `<div class="nt">${stkHtml(nxt.sticker, nxt.type)} ${esc(nxt.title)}</div><div class="nm">${nxt.time ? '🕒 ' + nxt.time : 'Өдөржин'}${nxt.person ? ' · 👤 ' + esc(nxt.person) : ''}${nxt.place ? ' · 📍 ' + esc(nxt.place) : ''}</div>`
@@ -876,8 +876,7 @@ function settingsForm() {
       <button class="btn sm" data-m="export">${ico('download')} Нөөцлөх (JSON)</button>
       <label class="btn sm">${ico('upload')} Сэргээх<input type="file" accept=".json" hidden id="s-import"></label>
       <button class="btn sm" data-m="ics">${ico('download')} Календарь (.ics)</button></div>
-      <button class="btn sm" data-m="transfer">📲 Утас ↔ компьютер</button>
-      <p class="hint">Өгөгдөл зөвхөн энэ төхөөрөмж дээр хадгалагдана. Утас ↔ компьютер хооронд линкээр шилжүүлнэ.</p></div>
+      <p class="hint">Онлайн синкийг асаавал өгөгдөл төхөөрөмж хооронд автоматаар нэгдэнэ. Асаагаагүй бол зөвхөн энэ төхөөрөмж дээр хадгалагдана.</p></div>
     <div class="mfoot"><button class="btn l danger" data-m="wipe">Бүгдийг устгах</button><button class="btn primary" data-m="ok">Болсон</button></div>`, m => {
     renderSettingsStatus();
     m.querySelector('#s-import').onchange = async e => {
@@ -893,7 +892,6 @@ function settingsForm() {
       if (k === 'syncon') { enableSync(m.querySelector('#s-token').value, m.querySelector('#s-repo').value).then(() => { if (syncCfg) { closeModal(); settingsForm(); } }); }
       if (k === 'syncnow') syncNow(true);
       if (k === 'syncoff' && confirm('Синкийг унтраах уу? GitHub дээрх өгөгдөл устахгүй, энэ төхөөрөмжөөс token арилна.')) { syncCfg = null; try { localStorage.removeItem(SYNC_KEY); } catch (e) { } lastSig = ''; closeModal(); settingsForm(); render(); }
-      if (k === 'transfer') { closeModal(); transferForm(); }
       if (k === 'selfpw') pinForm();
       if (k === 'export') download(`төлөвлөгөө-${today()}.json`, JSON.stringify(state), 'application/json');
       if (k === 'ics') exportIcs();
@@ -1030,22 +1028,7 @@ async function enableSync(token, repo) {
   jset(SYNC_KEY, syncCfg); lastSig = ''; await syncNow(true);
 }
 
-/* ───────── transfer (утас ↔ компьютер) ───────── */
-const toB64u = b => { let s = ''; b.forEach(x => s += String.fromCharCode(x)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
-const fromB64u = s => { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; return Uint8Array.from(atob(s), c => c.charCodeAt(0)); };
-async function pack() {
-  const raw = new TextEncoder().encode(JSON.stringify({ v: 1, items: state.items, tomb: state.tomb || {}, stickers: state.stickers, school: state.settings.school }));
-  if ('CompressionStream' in window) return 'z.' + toB64u(new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer()));
-  return 'p.' + toB64u(raw);
-}
-async function unpack(code) {
-  code = code.trim(); const k = code.indexOf('data='); if (k >= 0) code = code.slice(k + 5);
-  code = code.replace(/\s+/g, '');
-  let bytes = fromB64u(code.slice(2));
-  if (code.startsWith('z.')) bytes = new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());
-  else if (!code.startsWith('p.')) throw 0;
-  const o = JSON.parse(new TextDecoder().decode(bytes)); if (!Array.isArray(o.items)) throw 0; return o;
-}
+/* ───────── merge (синкийн нэгтгэл) ───────── */
 function mergeIn(o) {
   state.tomb = state.tomb || {}; let add = 0, upd = 0, del = 0;
   Object.entries(o.tomb || {}).forEach(([id, ts]) => { if (ts > (state.tomb[id] || 0)) state.tomb[id] = ts; });
@@ -1060,35 +1043,6 @@ function mergeIn(o) {
   if (o.school && !state.settings.school) state.settings.school = o.school;
   save(); if (add + upd + del) render(); return { add, upd, del };
 }
-async function confirmImport(code) {
-  let o; try { o = await unpack(code); } catch (e) { return toast('Код эсвэл линк буруу байна.'); }
-  openModal(`<h2>📥 Өгөгдөл олдлоо</h2><p style="margin:0 0 6px"><b>${o.items.length}</b> бичлэг ирлээ. Таны одоогийн ${state.items.length} бичлэгтэй <b>нэгтгэнэ</b> (юу ч устахгүй, шинэ нь нэмэгдэж, илүү шинэчилсэн нь солигдоно).</p>
-    <div class="mfoot"><button class="btn" data-m="close">Болих</button><button class="btn primary" data-m="ok">Нэгтгэх</button></div>`, m => {
-    m.onclick = e => { const k = e.target.closest('[data-m]')?.dataset.m; if (!k) return; closeModal();
-      if (k === 'ok') { const r = mergeIn(o); toast(`Нэгтгэгдлээ ✓ (+${r.add} шинэ, ${r.upd} шинэчилсэн${r.del ? ', ' + r.del + ' устсан' : ''})`); } };
-  });
-}
-async function transferForm() {
-  const code = await pack(), link = `${location.origin}${location.pathname}#data=${code}`, big = link.length > 50000;
-  openModal(`<h2>📲 Утас ↔ компьютер</h2>
-    <p class="hint" style="margin:-8px 0 14px">Өгөгдөл төхөөрөмж бүр дээр тусдаа хадгалагддаг. Нэгээс нөгөө рүү шилжүүлэх амар арга:</p>
-    <div class="panel" style="margin-bottom:12px"><b>1. Энэ төхөөрөмжөөс илгээх</b> <span class="hint">(${state.items.length} бичлэг)</span>
-      <p class="hint">Линкийг өөртөө Messenger, Telegram, имэйлээр илгээгээд нөгөө төхөөрөмж дээрээ нээнэ. Кодыг нь оруулна, нууц кодоо бичнэ, "Нэгтгэх" дарна.</p>
-      ${big ? '<p class="hint" style="color:var(--rose)">Линк хэт урт болсон тул Тохиргооны "Нөөцлөх (JSON)" файлыг ашиглана уу.</p>' : ''}
-      <div class="chips"><button class="btn primary sm" data-m="copy">${ico('copy')} Линк хуулах</button>${navigator.share ? `<button class="btn sm" data-m="share">Хуваалцах…</button>` : ''}</div></div>
-    <div class="panel"><b>2. Өөр төхөөрөмжөөс авах</b>
-      <p class="hint">Нөгөө төхөөрөмжөөс авсан линк эсвэл кодоо энд буулгана.</p>
-      <textarea class="in" id="t-in" placeholder="Линк эсвэл код буулгах…" style="min-height:60px"></textarea>
-      <div class="mfoot" style="margin-top:10px"><button class="btn primary sm" data-m="imp">Нэгтгэх</button></div></div>
-    <div class="mfoot"><button class="btn" data-m="close">Хаах</button></div>`, m => {
-    m.onclick = async e => { const k = e.target.closest('[data-m]')?.dataset.m; if (!k) return;
-      if (k === 'close') return closeModal();
-      if (k === 'copy') { try { await navigator.clipboard.writeText(link); toast('Линк хуулагдлаа ✓'); } catch (_) { prompt('Хуулж аваарай:', link); } }
-      if (k === 'share') { try { await navigator.share({ title: 'Төлөвлөгөө', url: link }); } catch (_) { } }
-      if (k === 'imp') { const v = m.querySelector('#t-in').value; if (!v.trim()) return toast('Эхлээд линк буулгана уу.'); closeModal(); confirmImport(v); } };
-  });
-}
-
 /* ───────── events ───────── */
 document.addEventListener('click', e => {
   const v = e.target.closest('[data-view]'); if (v) { ui.view = v.dataset.view; render(); scrollTo(0, 0); return; }
@@ -1111,7 +1065,6 @@ document.addEventListener('click', e => {
     case 'flt': ui.filter = a.dataset.k; render(); break;
     case 'ics': exportIcs(); break;
     case 'lock': lockNow(); break;
-    case 'transfer': transferForm(); break;
   }
 });
 document.addEventListener('input', e => { if (e.target.id === 'q') { ui.q = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#q'); q.focus(); q.setSelectionRange(pos, pos); } });
@@ -1131,8 +1084,6 @@ function unlock() {
   me = { name: 'Сэтгэл зүйч', role: 'user' }; KEY = LEGACY_KEY; loadState();
   document.body.classList.remove('authing'); $('#auth').innerHTML = '';
   startApp();
-  let pend = null; try { pend = sessionStorage.getItem('psy-pending'); sessionStorage.removeItem('psy-pending'); } catch (e) { }
-  if (pend) setTimeout(() => confirmImport(pend), 300);
 }
 function migrate() {
   if (localStorage.getItem('psy-migrated')) return;
@@ -1146,7 +1097,6 @@ function migrate() {
 }
 function boot() {
   migrate();
-  if (location.hash.startsWith('#data=')) { try { sessionStorage.setItem('psy-pending', location.hash); } catch (e) { } history.replaceState(null, '', location.pathname + location.search); }
   let ok = false; try { ok = sessionStorage.getItem('psy-unlocked') === '1'; } catch (e) { }
   ok ? unlock() : lockScreen();
 }
