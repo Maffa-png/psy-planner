@@ -304,6 +304,7 @@ body.authing #auth{display:grid;place-items:center;min-height:100vh;padding:20px
     <nav class="nav" id="nav"></nav>
     <div class="grow"></div>
     <button class="btn" data-act="lock">🔒 Түгжих</button>
+    <div class="hint syncbadge" style="text-align:center;margin:0"></div>
     <button class="btn primary" data-act="add">+ Шинэ нэмэх</button>
     <button class="btn" data-act="settings"><span data-ico="settings"></span> Тохиргоо</button>
   </aside>
@@ -433,7 +434,7 @@ function stamp(prev) {
 }
 function mutate(fn, msg) {
   const snap = JSON.stringify(state.items), pm = snapMap();
-  fn(); stamp(pm); save(); render();
+  fn(); stamp(pm); save(); render(); scheduleSync();
   if (msg) toast(msg, { undo: () => { const pm2 = snapMap(); state.items = JSON.parse(snap); stamp(pm2); save(); render(); } });
 }
 
@@ -537,6 +538,7 @@ function render() {
   const v = { today: vToday, week: vWeek, month: vMonth, year: vYear, all: vAll }[ui.view] || vToday;
   $('#main').innerHTML = v();
   hydrateIcons();
+  document.querySelectorAll('.syncbadge').forEach(e => e.textContent = badge());
 }
 
 function card(i) {
@@ -584,7 +586,7 @@ function vToday() {
   const week = [...Array(7)].map((_, k) => addDays(t, k)).flatMap(itemsOn).filter((i, k, a) => a.indexOf(i) === k);
   const upcoming = state.items.filter(i => live(i) && i.date > t && i.date <= addDays(t, 14)).sort(sortFn).slice(0, 6);
   const impt = state.items.filter(i => live(i) && i.important && endOf(i) >= t && !(i.date <= t)).sort(sortFn).slice(0, 4);
-  return head(`${hello} 👋`, fmtDate(t), `<button class="btn" data-act="transfer">📲 Шилжүүлэх</button><button class="btn primary" data-act="add">${ico('plus')} Нэмэх</button>`) + `
+  return head(`${hello} 👋`, `${fmtDate(t)} · <span class="syncbadge">${badge()}</span>`, `<button class="btn" data-act="transfer">📲 Шилжүүлэх</button><button class="btn primary" data-act="add">${ico('plus')} Нэмэх</button>`) + `
   <div class="hero">
     <div class="panel next"><h3>Дараагийн</h3>
       ${nxt ? `<div class="nt">${stkHtml(nxt.sticker, nxt.type)} ${esc(nxt.title)}</div><div class="nm">${nxt.time ? '🕒 ' + nxt.time : 'Өдөржин'}${nxt.person ? ' · 👤 ' + esc(nxt.person) : ''}${nxt.place ? ' · 📍 ' + esc(nxt.place) : ''}</div>`
@@ -865,6 +867,11 @@ function settingsForm() {
     <div class="fld"><label>🔒 Нууц код</label><div class="chips">
       <button class="btn sm" data-m="selfpw">${ico('key')} Код солих</button>
       <button class="btn sm" data-m="lock">${ico('logout')} Одоо түгжих</button></div></div>
+    <div class="fld"><label>☁ Онлайн синк (утас ↔ компьютер автоматаар)</label>
+      ${!syncReady() ? '<p class="hint" style="margin:0">Сервер холбогдоогүй байна.</p>' : syncCfg ? `<div class="hint" style="margin:0 0 8px"><span class="syncbadge">${badge()}</span></div>
+        <div class="chips"><button class="btn sm primary" data-m="syncnow">Одоо синк хийх</button><button class="btn sm danger" data-m="syncoff">Унтраах</button></div>`
+      : `<input class="in" id="s-repo" value="${esc(SYNC.repo)}" placeholder="owner/repo" autocomplete="off" style="margin-bottom:8px"><input class="in" id="s-token" type="password" placeholder="GitHub token (github_pat_…)" autocomplete="off"><div class="chips" style="margin-top:8px"><button class="btn sm primary" data-m="syncon">Асаах</button></div>
+        <p class="hint">Өгөгдөл таны <b>private</b> GitHub repo дотор хадгалагдана. Token-оо утас, компьютер бүр дээр нэг удаа бичнэ. Үүнээс хойш өөрөө автоматаар синк хийнэ.</p>`}</div>
     <div class="fld"><label>Өгөгдөл</label><div class="chips">
       <button class="btn sm" data-m="export">${ico('download')} Нөөцлөх (JSON)</button>
       <label class="btn sm">${ico('upload')} Сэргээх<input type="file" accept=".json" hidden id="s-import"></label>
@@ -883,6 +890,9 @@ function settingsForm() {
       if (k === 'perm') askPermission();
       if (k === 'test') testNotice();
       if (k === 'lock') lockNow();
+      if (k === 'syncon') { enableSync(m.querySelector('#s-token').value, m.querySelector('#s-repo').value).then(() => { if (syncCfg) { closeModal(); settingsForm(); } }); }
+      if (k === 'syncnow') syncNow(true);
+      if (k === 'syncoff' && confirm('Синкийг унтраах уу? GitHub дээрх өгөгдөл устахгүй, энэ төхөөрөмжөөс token арилна.')) { syncCfg = null; try { localStorage.removeItem(SYNC_KEY); } catch (e) { } lastSig = ''; closeModal(); settingsForm(); render(); }
       if (k === 'transfer') { closeModal(); transferForm(); }
       if (k === 'selfpw') pinForm();
       if (k === 'export') download(`төлөвлөгөө-${today()}.json`, JSON.stringify(state), 'application/json');
@@ -961,6 +971,65 @@ function pinForm() {
       setPin(v); closeModal(); toast('Нууц код солигдлоо ✓'); };
   });
 }
+/* ───────── cloud sync (GitHub private repo) ───────── */
+const SYNC = { repo: 'Maffa-png/psy-data', file: 'data.json' };
+const SYNC_KEY = 'psy-sync';
+let syncCfg = jget(SYNC_KEY, null), syncSt = { s: 'idle', at: '' }, syncBusy = false, syncT = null, lastSig = '';
+const syncReady = () => true;
+const b64 = u => { let s = ''; u.forEach(x => s += String.fromCharCode(x)); return btoa(s); };
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const utf8b64 = str => b64(new TextEncoder().encode(str));
+const b64utf8 = s => new TextDecoder().decode(unb64(s.replace(/\s/g, '')));
+async function gh(path, method = 'GET', body) {
+  const r = await fetch(`https://api.github.com/repos/${syncCfg.repo}${path}`, {
+    method, cache: 'no-store', body: body && JSON.stringify(body),
+    headers: { Authorization: 'Bearer ' + syncCfg.token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json', 'X-GitHub-Api-Version': '2022-11-28' },
+  });
+  if (r.status === 404 && path.startsWith('/contents')) return null;
+  if (!r.ok) {
+    const e = new Error(r.status === 401 ? 'token буруу' : r.status === 403 ? 'token эрхгүй' : r.status === 404 ? 'repo олдсонгүй' : r.status === 409 || r.status === 422 ? 'conflict' : 'HTTP ' + r.status);
+    e.status = r.status; throw e;
+  }
+  return r.json();
+}
+function badge() {
+  if (!syncCfg) return '☁ синк унтраалттай';
+  return { busy: '☁ синк хийж байна…', ok: `☁ ✓ ${syncSt.at}`, err: '☁ ⚠ синк алдаатай', idle: '☁ …' }[syncSt.s];
+}
+function setSync(s) {
+  syncSt.s = s; if (s === 'ok') { const d = new Date(); syncSt.at = `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+  document.querySelectorAll('.syncbadge').forEach(e => e.textContent = badge());
+}
+function scheduleSync() { if (syncCfg) { clearTimeout(syncT); syncT = setTimeout(() => syncNow(), 1500); } }
+async function syncNow(manual, retry) {
+  if (!syncCfg || syncBusy || !me) return;
+  syncBusy = true; setSync('busy');
+  try {
+    const f = await gh(`/contents/${SYNC.file}`);
+    if (f && f.content) mergeIn(JSON.parse(b64utf8(f.content)));
+    const out = { v: 1, items: state.items, tomb: state.tomb || {}, stickers: state.stickers, school: state.settings.school };
+    const sig = JSON.stringify([out.items, out.tomb, out.school, out.stickers.length]);
+    if (sig !== lastSig || !f) {
+      await gh(`/contents/${SYNC.file}`, 'PUT', Object.assign({ message: 'sync', content: utf8b64(JSON.stringify(out)) }, f ? { sha: f.sha } : {}));
+      lastSig = sig;
+    }
+    setSync('ok'); if (manual) toast('Синк хийгдлээ ✓');
+  } catch (e) {
+    if (e.status === 409 || e.status === 422) { if (!retry) { syncBusy = false; return await syncNow(manual, true); } }
+    setSync('err'); if (manual) toast('Синк амжилтгүй: ' + e.message);
+  } finally { syncBusy = false; }
+}
+async function enableSync(token, repo) {
+  token = (token || '').trim(); repo = (repo || '').trim().replace(/^https?:\/\/github\.com\//, '').replace(/\/+$/, '');
+  if (!token || !/^[^/\s]+\/[^/\s]+$/.test(repo)) return toast('Token болон repo-г (owner/repo) бөглөнө үү.');
+  syncCfg = { token, repo };
+  try {
+    const info = await gh('');
+    if (info && info.private === false) { syncCfg = null; return toast('Энэ repo PUBLIC байна! Өгөгдөл ил гарах тул Private repo ашиглана уу.'); }
+  } catch (e) { syncCfg = null; return toast('Холбогдсонгүй: ' + e.message); }
+  jset(SYNC_KEY, syncCfg); lastSig = ''; await syncNow(true);
+}
+
 /* ───────── transfer (утас ↔ компьютер) ───────── */
 const toB64u = b => { let s = ''; b.forEach(x => s += String.fromCharCode(x)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
 const fromB64u = s => { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; return Uint8Array.from(atob(s), c => c.charCodeAt(0)); };
@@ -989,7 +1058,7 @@ function mergeIn(o) {
   (o.stickers || []).forEach(s => { if (!state.stickers.includes(s)) state.stickers.push(s); });
   state.stickers = state.stickers.slice(-40);
   if (o.school && !state.settings.school) state.settings.school = o.school;
-  save(); render(); return { add, upd, del };
+  save(); if (add + upd + del) render(); return { add, upd, del };
 }
 async function confirmImport(code) {
   let o; try { o = await unpack(code); } catch (e) { return toast('Код эсвэл линк буруу байна.'); }
@@ -1052,7 +1121,8 @@ function startApp() {
   hydrateIcons();
   render();
   tick(); setInterval(tick, 10000);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) { tick(); if (ui.view === 'today') render(); } });
+  if (syncCfg) { syncNow(); setInterval(() => syncNow(), 60000); addEventListener('online', () => syncNow()); }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { tick(); syncNow(); if (ui.view === 'today') render(); } });
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready).then(r => { swReg = r; }).catch(() => { });
   }
