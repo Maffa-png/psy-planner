@@ -303,9 +303,7 @@ body.authing #auth{display:grid;place-items:center;min-height:100vh;padding:20px
     <div class="brand"><img src="icon.svg" alt=""><div>Сэтгэл зүйчийн<br>төлөвлөгөө<small id="schoolName"></small></div></div>
     <nav class="nav" id="nav"></nav>
     <div class="grow"></div>
-    <button class="btn" data-act="lock">🔒 Түгжих</button>
-    <div class="hint syncbadge" style="text-align:center;margin:0"></div>
-    <button class="btn primary" data-act="add">+ Шинэ нэмэх</button>
+    <button class="btn" data-act="lock">🔒 Түгжих</button>    <button class="btn primary" data-act="add">+ Шинэ нэмэх</button>
     <button class="btn" data-act="settings"><span data-ico="settings"></span> Тохиргоо</button>
   </aside>
   <main class="main" id="main"></main>
@@ -586,7 +584,7 @@ function vToday() {
   const week = [...Array(7)].map((_, k) => addDays(t, k)).flatMap(itemsOn).filter((i, k, a) => a.indexOf(i) === k);
   const upcoming = state.items.filter(i => live(i) && i.date > t && i.date <= addDays(t, 14)).sort(sortFn).slice(0, 6);
   const impt = state.items.filter(i => live(i) && i.important && endOf(i) >= t && !(i.date <= t)).sort(sortFn).slice(0, 4);
-  return head(`${hello} 👋`, `${fmtDate(t)} · <span class="syncbadge">${badge()}</span>`, `<button class="btn primary" data-act="add">${ico('plus')} Нэмэх</button>`) + `
+  return head(`${hello} 👋`, fmtDate(t), `<button class="btn primary" data-act="add">${ico('plus')} Нэмэх</button>`) + `
   <div class="hero">
     <div class="panel next"><h3>Дараагийн</h3>
       ${nxt ? `<div class="nt">${stkHtml(nxt.sticker, nxt.type)} ${esc(nxt.title)}</div><div class="nm">${nxt.time ? '🕒 ' + nxt.time : 'Өдөржин'}${nxt.person ? ' · 👤 ' + esc(nxt.person) : ''}${nxt.place ? ' · 📍 ' + esc(nxt.place) : ''}</div>`
@@ -867,16 +865,11 @@ function settingsForm() {
     <div class="fld"><label>🔒 Нууц код</label><div class="chips">
       <button class="btn sm" data-m="selfpw">${ico('key')} Код солих</button>
       <button class="btn sm" data-m="lock">${ico('logout')} Одоо түгжих</button></div></div>
-    <div class="fld"><label>☁ Онлайн синк (утас ↔ компьютер автоматаар)</label>
-      ${!syncReady() ? '<p class="hint" style="margin:0">Сервер холбогдоогүй байна.</p>' : syncCfg ? `<div class="hint" style="margin:0 0 8px"><span class="syncbadge">${badge()}</span></div>
-        <div class="chips"><button class="btn sm primary" data-m="syncnow">Одоо синк хийх</button><button class="btn sm danger" data-m="syncoff">Унтраах</button></div>`
-      : `<input class="in" id="s-repo" value="${esc(SYNC.repo)}" placeholder="owner/repo" autocomplete="off" style="margin-bottom:8px"><input class="in" id="s-token" type="password" placeholder="GitHub token (github_pat_…)" autocomplete="off"><div class="chips" style="margin-top:8px"><button class="btn sm primary" data-m="syncon">Асаах</button></div>
-        <p class="hint">Өгөгдөл таны <b>private</b> GitHub repo дотор хадгалагдана. Token-оо утас, компьютер бүр дээр нэг удаа бичнэ. Үүнээс хойш өөрөө автоматаар синк хийнэ.</p>`}</div>
     <div class="fld"><label>Өгөгдөл</label><div class="chips">
       <button class="btn sm" data-m="export">${ico('download')} Нөөцлөх (JSON)</button>
       <label class="btn sm">${ico('upload')} Сэргээх<input type="file" accept=".json" hidden id="s-import"></label>
       <button class="btn sm" data-m="ics">${ico('download')} Календарь (.ics)</button></div>
-      <p class="hint">Онлайн синкийг асаавал өгөгдөл төхөөрөмж хооронд автоматаар нэгдэнэ. Асаагаагүй бол зөвхөн энэ төхөөрөмж дээр хадгалагдана.</p></div>
+      <p class="hint">Нөөц файл хадгалах эсвэл утасны календарьт нэмэх.</p></div>
     <div class="mfoot"><button class="btn l danger" data-m="wipe">Бүгдийг устгах</button><button class="btn primary" data-m="ok">Болсон</button></div>`, m => {
     renderSettingsStatus();
     m.querySelector('#s-import').onchange = async e => {
@@ -889,9 +882,6 @@ function settingsForm() {
       if (k === 'perm') askPermission();
       if (k === 'test') testNotice();
       if (k === 'lock') lockNow();
-      if (k === 'syncon') { enableSync(m.querySelector('#s-token').value, m.querySelector('#s-repo').value).then(() => { if (syncCfg) { closeModal(); settingsForm(); } }); }
-      if (k === 'syncnow') syncNow(true);
-      if (k === 'syncoff' && confirm('Синкийг унтраах уу? GitHub дээрх өгөгдөл устахгүй, энэ төхөөрөмжөөс token арилна.')) { syncCfg = null; try { localStorage.removeItem(SYNC_KEY); } catch (e) { } lastSig = ''; closeModal(); settingsForm(); render(); }
       if (k === 'selfpw') pinForm();
       if (k === 'export') download(`төлөвлөгөө-${today()}.json`, JSON.stringify(state), 'application/json');
       if (k === 'ics') exportIcs();
@@ -972,7 +962,7 @@ function pinForm() {
 /* ───────── cloud sync (GitHub private repo) ───────── */
 const SYNC = { repo: 'Maffa-png/psy-data', file: 'data.json' };
 const SYNC_KEY = 'psy-sync';
-let syncCfg = jget(SYNC_KEY, null), syncSt = { s: 'idle', at: '' }, syncBusy = false, syncT = null, lastSig = '';
+let syncCfg = jget(SYNC_KEY, null), syncSt = { s: 'idle', at: '' }, syncBusy = false, syncT = null, lastSig = '', authWarned = false;
 const syncReady = () => true;
 const b64 = u => { let s = ''; u.forEach(x => s += String.fromCharCode(x)); return btoa(s); };
 const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
@@ -991,7 +981,7 @@ async function gh(path, method = 'GET', body) {
   return r.json();
 }
 function badge() {
-  if (!syncCfg) return '☁ синк унтраалттай';
+  if (!syncCfg) return '☁ Синк холбогдоогүй';
   return { busy: '☁ синк хийж байна…', ok: `☁ ✓ ${syncSt.at}`, err: '☁ ⚠ синк алдаатай', idle: '☁ …' }[syncSt.s];
 }
 function setSync(s) {
@@ -1015,10 +1005,12 @@ async function syncNow(manual, retry) {
       await gh(`/contents/${SYNC.file}`, 'PUT', Object.assign({ message: 'sync', content: utf8b64(JSON.stringify(out)) }, f ? { sha: f.sha } : {}));
       lastSig = sig;
     }
-    setSync('ok'); if (manual) toast('Синк хийгдлээ ✓');
+    setSync('ok'); if (manual) toast('Холбогдлоо ✓');
   } catch (e) {
     if (e.status === 409 || e.status === 422) { if (!retry) { syncBusy = false; return await syncNow(manual, true); } }
-    setSync('err'); if (manual) toast('Синк амжилтгүй: ' + e.message);
+    setSync('err');
+    if (manual) toast('Холбогдсонгүй: ' + e.message);
+    else if ((e.status === 401 || e.status === 403) && !authWarned) { authWarned = true; toast('Утас, компьютерийн холбоо тасарсан байна. Тохируулсан хүнд хэлнэ үү.'); }
   } finally { syncBusy = false; }
 }
 async function enableSync(token, repo) {
@@ -1030,6 +1022,46 @@ async function enableSync(token, repo) {
     if (info && info.private === false) { syncCfg = null; return toast('Энэ repo PUBLIC байна! Өгөгдөл ил гарах тул Private repo ашиглана уу.'); }
   } catch (e) { syncCfg = null; return toast('Холбогдсонгүй: ' + e.message); }
   jset(SYNC_KEY, syncCfg); lastSig = ''; await syncNow(true);
+}
+
+/* Нуугдмал нэг удаагийн тохиргоо: зөвхөн ...#setup хаягаар нээгдэнэ. Энгийн хэрэглэгч үүнийг хэзээ ч харахгүй. */
+function deviceSetup() {
+  if (syncCfg) {
+    return openModal(`<h2>✓ Энэ төхөөрөмж холбогдсон</h2>
+      <p class="hint" style="margin:-6px 0 14px">Энд оруулсан бүх зүйл нөгөө төхөөрөмж дээр автоматаар гарна.</p>
+      <div class="panel"><b>Утсаа (эсвэл өөр компьютераа) холбох:</b> доорх линкийг хуулж өөртөө илгээгээд, тэр төхөөрөмж дээрээ <b>нэг удаа</b> нээнэ.
+        <div class="chips" style="margin:10px 0 0"><button class="btn sm primary" data-m="link">${ico('copy')} Холбох линк хуулах</button></div>
+        <p class="hint">Энэ линкийг бусдад бүү өг.</p></div>
+      <div class="mfoot"><button class="btn danger l" data-m="off">Энэ төхөөрөмжийг салгах</button><button class="btn primary" data-m="close">Болсон</button></div>`, m => {
+      m.onclick = e => { const k = e.target.closest('[data-m]')?.dataset.m; if (!k) return;
+        if (k === 'close') return closeModal();
+        if (k === 'link') copyDeviceLink();
+        if (k === 'off' && confirm('Энэ төхөөрөмжийг салгах уу? Төлөвлөгөө устахгүй.')) { syncCfg = null; try { localStorage.removeItem(SYNC_KEY); } catch (_) { } lastSig = ''; closeModal(); } };
+    });
+  }
+  const url = 'https://github.com/settings/personal-access-tokens/new?name=psy-planner&description=Planner+sync&expires_in=none&contents=write';
+  openModal(`<h2>Утас ↔ компьютер холбох</h2>
+    <p class="hint" style="margin:-6px 0 14px">Нэг л удаа хийнэ. Дараа нь бүх зүйл автоматаар ажиллана.</p>
+    <div class="panel" style="margin-bottom:10px"><b>1-р алхам.</b> Доорх товчийг дарж GitHub-ийн хуудсыг нээнэ (GitHub-д нэвтэрсэн байх хэрэгтэй).
+      <div class="chips" style="margin:10px 0 0"><a class="btn sm primary" target="_blank" rel="noopener" href="${url}">GitHub хуудас нээх</a></div></div>
+    <div class="panel" style="margin-bottom:10px"><b>2-р алхам.</b> Тэр хуудсан дээр <b>"Only select repositories"</b> сонгоод <b>psy-data</b>-г сонгоно. Хамгийн доор <b>Generate token</b> дарна. Гарч ирсэн <b>github_pat_…</b> гэсэн уртхан кодыг хуулна.</div>
+    <div class="panel"><b>3-р алхам.</b> Хуулсан кодоо энд буулгана:
+      <input class="in" id="x-token" type="password" placeholder="github_pat_…" autocomplete="off" style="margin-top:8px">
+      <div class="mfoot" style="margin-top:10px"><button class="btn primary" data-m="go">Холбох</button></div></div>
+    <p class="hint">Танд "холбох линк" ирсэн бол энэ бүгд хэрэггүй — тэр линкийг нээхэд л хангалттай.</p>
+    <div class="mfoot"><button class="btn" data-m="close">Хаах</button></div>`, m => {
+    m.onclick = e => { const k = e.target.closest('[data-m]')?.dataset.m; if (!k) return;
+      if (k === 'close') return closeModal();
+      if (k === 'go') enableSync(m.querySelector('#x-token').value, SYNC.repo).then(() => { if (syncCfg) deviceSetup(); }); };
+  });
+}
+function copyDeviceLink() {
+  if (!syncCfg) return;
+  const link = `${location.origin}${location.pathname}#sync=${btoa(JSON.stringify({ t: syncCfg.token, r: syncCfg.repo }))}`;
+  (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(() => toast('Линк хуулагдлаа. Өөр төхөөрөмж дээрээ нээнэ үү. Бусдад бүү өг!'), () => prompt('Хуулж аваарай (бусдад бүү өг):', link));
+}
+async function applySyncLink(code) {
+  try { const o = JSON.parse(atob(code)); await enableSync(o.t, o.r); if (syncCfg) toast('Энэ төхөөрөмж холбогдлоо ✓'); } catch (e) { toast('Холбох линк буруу байна.'); }
 }
 
 /* ───────── merge (синкийн нэгтгэл) ───────── */
@@ -1068,8 +1100,7 @@ document.addEventListener('click', e => {
     case 'goMonth': ui.month = a.dataset.m; ui.view = 'month'; ui.sel = a.dataset.m === today().slice(0, 7) ? today() : a.dataset.m + '-01'; render(); scrollTo(0, 0); break;
     case 'flt': ui.filter = a.dataset.k; render(); break;
     case 'ics': exportIcs(); break;
-    case 'lock': lockNow(); break;
-  }
+    case 'lock': lockNow(); break;  }
 });
 document.addEventListener('input', e => { if (e.target.id === 'q') { ui.q = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#q'); q.focus(); q.setSelectionRange(pos, pos); } });
 
@@ -1088,6 +1119,10 @@ function unlock() {
   me = { name: 'Сэтгэл зүйч', role: 'user' }; KEY = LEGACY_KEY; loadState();
   document.body.classList.remove('authing'); $('#auth').innerHTML = '';
   startApp();
+  let ps = null; try { ps = sessionStorage.getItem('psy-pending-sync'); sessionStorage.removeItem('psy-pending-sync'); } catch (e) { }
+  if (ps) applySyncLink(ps);
+  let su = null; try { su = sessionStorage.getItem('psy-pending-setup'); sessionStorage.removeItem('psy-pending-setup'); } catch (e) { }
+  if (su) setTimeout(deviceSetup, 300);
 }
 function migrate() {
   if (localStorage.getItem('psy-migrated')) return;
@@ -1101,6 +1136,8 @@ function migrate() {
 }
 function boot() {
   migrate();
+  if (location.hash === '#setup') { try { sessionStorage.setItem('psy-pending-setup', '1'); } catch (e) { } history.replaceState(null, '', location.pathname + location.search); }
+  if (location.hash.startsWith('#sync=')) { try { sessionStorage.setItem('psy-pending-sync', location.hash.slice(6)); } catch (e) { } history.replaceState(null, '', location.pathname + location.search); }
   let ok = false; try { ok = sessionStorage.getItem('psy-unlocked') === '1'; } catch (e) { }
   ok ? unlock() : lockScreen();
 }
