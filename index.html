@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="mn">
 <head>
 <meta charset="utf-8">
@@ -286,6 +286,14 @@ body.authing #auth{display:grid;place-items:center;min-height:100vh;padding:20px
 .acc .info div{color:var(--muted);font-size:13px}
 .acc .btns{display:flex;gap:6px;flex-wrap:wrap}
 .cred{background:var(--surface2);border-radius:14px;padding:14px;font-family:ui-monospace,Consolas,monospace;font-size:14px;line-height:1.8;overflow-wrap:anywhere}
+.dots{display:flex;justify-content:center;gap:14px;margin:6px 0 22px}
+.dots i{width:16px;height:16px;border-radius:50%;border:2px solid var(--accent);transition:.15s}
+.dots i.on{background:var(--accent)}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:280px;margin:0 auto}
+.keys button{height:64px;border-radius:50%;background:var(--surface2);font-size:24px;font-weight:600;transition:.1s}
+.keys button:active{background:var(--accent-soft);transform:scale(.95)}
+.shake{animation:shk .35s}
+@keyframes shk{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
 .tsel{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 </style>
 </head>
@@ -295,7 +303,7 @@ body.authing #auth{display:grid;place-items:center;min-height:100vh;padding:20px
     <div class="brand"><img src="icon.svg" alt=""><div>Сэтгэл зүйчийн<br>төлөвлөгөө<small id="schoolName"></small></div></div>
     <nav class="nav" id="nav"></nav>
     <div class="grow"></div>
-    <div class="whoami" id="whoami"></div>
+    <button class="btn" data-act="lock">🔒 Түгжих</button>
     <button class="btn primary" data-act="add">+ Шинэ нэмэх</button>
     <button class="btn" data-act="settings"><span data-ico="settings"></span> Тохиргоо</button>
   </aside>
@@ -368,13 +376,11 @@ const stkHtml = (s, type) => !s ? (TYPES[type] || TYPES.plan).e
   : s.startsWith('data:') ? `<img src="${s}" alt="">` : esc(s);
 
 /* ───────── state ───────── */
-const LEGACY_KEY = 'psy-planner-v1', ACC_KEY = 'psy-accounts', SES_KEY = 'psy-session';
+const LEGACY_KEY = 'psy-planner-v1';
 const blank = () => ({ items: [], stickers: [], fired: {}, settings: { notify: true, school: '' } });
 const jget = (k, d) => { try { const r = localStorage.getItem(k); return r ? JSON.parse(r) : d; } catch (e) { return d; } };
 const jset = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
-let accounts = jget(ACC_KEY, []), me = null, KEY = null, state = blank();
-const saveAcc = () => jset(ACC_KEY, accounts);
-const dataKey = id => LEGACY_KEY + ':' + id;
+let me = null, KEY = LEGACY_KEY, state = blank();
 function loadState() { state = Object.assign(blank(), jget(KEY, {})); state.settings = Object.assign({ notify: true, school: '' }, state.settings); }
 const save = () => { if (KEY && !jset(KEY, state)) toast('Хадгалах хэмжээ дүүрсэн байна. Нөөцлөөд зарим sticker-ээ устгана уу.'); };
 
@@ -400,12 +406,6 @@ function sha256(msg) {
   return h.map(x => (x >>> 0).toString(16).padStart(8, '0')).join('');
 }
 const hashPw = (pw, salt) => { let x = salt + ':' + pw; for (let i = 0; i < 3000; i++) x = sha256(x + salt); return x; };
-const makeAcc = ({ name, username, password, role }) => { const salt = uid() + uid(); return { id: uid(), name, username: username.trim().toLowerCase(), salt, hash: hashPw(password, salt), role, active: true, created: today() }; };
-const genPw = () => { const c = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s = ''; const r = crypto.getRandomValues(new Uint32Array(8)); r.forEach(n => s += c[n % c.length]); return s; };
-const b64e = o => btoa(unescape(encodeURIComponent(JSON.stringify(o))));
-const b64d = s => JSON.parse(decodeURIComponent(escape(atob(s))));
-const inviteLink = a => `${location.origin}${location.pathname}#invite=${b64e({ id: a.id, name: a.name, username: a.username, salt: a.salt, hash: a.hash, role: a.role })}`;
-async function copyText(t) { try { await navigator.clipboard.writeText(t); toast('Хуулагдлаа ✓'); } catch (e) { prompt('Хуулж аваарай:', t); } }
 
 const ui = {
   view: 'today',
@@ -521,15 +521,13 @@ addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 /* ───────── rendering ───────── */
 const NAV = [['today', 'home', 'Өнөөдөр'], ['week', 'week', '7 хоног'], ['month', 'month', 'Сар'], ['year', 'year', 'Жил'], ['all', 'list', 'Бүгд']];
 
-const isAdmin = () => me && me.role === 'admin';
 function render() {
-  const nav = isAdmin() ? NAV.concat([['admin', 'shield', 'Админ']]) : NAV;
+  const nav = NAV;
   const btns = nav.map(([k, ic, l]) => `<button class="${ui.view === k ? 'on' : ''}" data-view="${k}">${ico(ic)}${l}</button>`).join('');
   $('#nav').innerHTML = btns; $('#tabbar').innerHTML = btns;
   $('#tabbar').style.gridTemplateColumns = `repeat(${nav.length},1fr)`;
   $('#schoolName').textContent = state.settings.school || '';
-  $('#whoami').innerHTML = me ? `<div class="av">${esc(me.name.slice(0, 1).toUpperCase())}</div><div style="min-width:0"><b>${esc(me.name)}</b><span>${isAdmin() ? 'Админ' : 'Сэтгэл зүйч'}</span></div>` : '';
-  const v = { today: vToday, week: vWeek, month: vMonth, year: vYear, all: vAll, admin: vAdmin }[ui.view] || vToday;
+  const v = { today: vToday, week: vWeek, month: vMonth, year: vYear, all: vAll }[ui.view] || vToday;
   $('#main').innerHTML = v();
   hydrateIcons();
 }
@@ -857,10 +855,9 @@ function settingsForm() {
     <div class="fld"><label>🔔 Мэдэгдэл</label><div id="s-status" class="hint" style="margin:0 0 6px"></div>
       <div class="chips"><button class="btn sm" data-m="perm">Мэдэгдэл зөвшөөрөх</button><button class="btn sm" data-m="test">🔔 Сануулга туршиж үзэх</button></div>
       <p class="hint">Сануулга нь апп нээлттэй (цонх эсвэл суулгасан апп ажиллаж) байх үед яг цагтаа ирнэ. Апп хаалттай үед ч найдвартай сануулга авахыг хүсвэл ".ics" файл татаж утасны календарьт нэмээрэй.</p></div>
-    <div class="fld"><label>👤 Бүртгэл: ${esc(me.name)} (@${esc(me.username)})</label><div class="chips">
-      <button class="btn sm" data-m="selfpw">${ico('key')} Нууц үг солих</button>
-      ${isAdmin() ? `<button class="btn sm" data-m="admin">${ico('shield')} Админ самбар</button>` : ''}
-      <button class="btn sm danger" data-m="logout">${ico('logout')} Гарах</button></div></div>
+    <div class="fld"><label>🔒 Нууц код</label><div class="chips">
+      <button class="btn sm" data-m="selfpw">${ico('key')} Код солих</button>
+      <button class="btn sm" data-m="lock">${ico('logout')} Одоо түгжих</button></div></div>
     <div class="fld"><label>Өгөгдөл</label><div class="chips">
       <button class="btn sm" data-m="export">${ico('download')} Нөөцлөх (JSON)</button>
       <label class="btn sm">${ico('upload')} Сэргээх<input type="file" accept=".json" hidden id="s-import"></label>
@@ -877,9 +874,8 @@ function settingsForm() {
       if (k === 'ok') { state.settings.school = m.querySelector('#s-school').value.trim(); save(); closeModal(); render(); }
       if (k === 'perm') askPermission();
       if (k === 'test') testNotice();
-      if (k === 'logout') logout();
-      if (k === 'selfpw') selfPwForm();
-      if (k === 'admin') { closeModal(); ui.view = 'admin'; render(); }
+      if (k === 'lock') lockNow();
+      if (k === 'selfpw') pinForm();
       if (k === 'export') download(`төлөвлөгөө-${today()}.json`, JSON.stringify(state), 'application/json');
       if (k === 'ics') exportIcs();
       if (k === 'wipe' && confirm('Бүх төлөвлөгөөг устгах уу? Үүнийг буцаах боломжгүй.')) { state.items = []; state.fired = {}; save(); closeModal(); render(); }
@@ -912,112 +908,50 @@ function exportIcs() {
   toast('.ics файл татагдлаа — утасны календарьд нээж нэмээрэй.');
 }
 
-/* ───────── admin panel ───────── */
-function vAdmin() {
-  if (!isAdmin()) return empty('Админ эрх шаардлагатай');
-  const rows = accounts.map(a => {
-    const n = ((jget(dataKey(a.id), {}).items) || []).length, self = a.id === me.id;
-    return `<div class="acc ${a.active ? '' : 'off'}"><div class="av">${esc(a.name.slice(0, 1).toUpperCase())}</div>
-      <div class="info"><b>${esc(a.name)}</b> ${a.role === 'admin' ? '<span class="badge imp">Админ</span>' : '<span class="badge pl">Сэтгэл зүйч</span>'} ${a.active ? '' : '<span class="badge warn">Идэвхгүй</span>'}
-      <div>@${esc(a.username)} · ${n} бичлэг (энэ төхөөрөмж дээр) · үүсгэсэн ${a.created}</div></div>
-      <div class="btns"><button class="btn sm" data-act="acc-link" data-id="${a.id}">${ico('copy')} Урилга линк</button>
-      <button class="btn sm" data-act="acc-pw" data-id="${a.id}">${ico('key')} Нууц үг</button>
-      ${self ? '' : `<button class="btn sm" data-act="acc-toggle" data-id="${a.id}">${a.active ? 'Идэвхгүй болгох' : 'Идэвхжүүлэх'}</button><button class="btn sm danger" data-act="acc-del" data-id="${a.id}">Устгах</button>`}</div></div>`;
-  }).join('');
-  return head('Админ самбар', 'Сэтгэл зүйчийн бүртгэл үүсгэх, нууц үг сэргээх, идэвхгүй болгох') + `
-  <div class="panel"><h3>Шинэ бүртгэл үүсгэх</h3>
-    <div class="two"><div class="fld"><label>Бүтэн нэр</label><input class="in" id="a-name" placeholder="Жишээ: Б. Сараа"></div>
-    <div class="fld"><label>Нэвтрэх нэр</label><input class="in" id="a-user" placeholder="saraa" autocapitalize="off" autocomplete="off"></div></div>
-    <div class="two"><div class="fld"><label>Нууц үг (6+ тэмдэгт)</label><div style="display:flex;gap:6px"><input class="in" id="a-pw" autocomplete="off"><button class="btn sm" data-act="acc-gen" type="button">Санамсаргүй</button></div></div>
-    <div class="fld"><label>Эрх</label><select class="in" id="a-role"><option value="user">Сэтгэл зүйч</option><option value="admin">Админ</option></select></div></div>
-    <button class="btn primary" data-act="acc-create">+ Бүртгэл үүсгэх</button></div>
-  <h2 class="sec">Бүртгэлүүд (${accounts.length})</h2><div class="list">${rows}</div>
-  <p class="hint" style="margin-top:14px">Бүртгэл үүсгэсний дараа гарах <b>урилга линкийг</b> сэтгэл зүйчид илгээнэ. Тэр линкийг өөрийн утас/компьютер дээрээ нэг удаа нээгээд, таны өгсөн нууц үгээр нэвтэрнэ. Төлөвлөгөөний өгөгдөл төхөөрөмж бүр дээр тусдаа хадгалагдана.</p>`;
+/* ───────── PIN lock ───────── */
+const PIN_KEY = 'psy-pin';
+const getPin = () => jget(PIN_KEY, null) || { salt: 'psy', len: 3, hash: hashPw('141', 'psy') };
+const setPin = pw => { const salt = uid() + uid(); jset(PIN_KEY, { salt, len: pw.length, hash: hashPw(pw, salt) }); };
+let fails = 0, lockUntil = 0;
+function lockScreen() {
+  document.body.classList.add('authing');
+  const pin = getPin(); let val = '';
+  const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'];
+  $('#auth').innerHTML = `<div class="acard" id="lockcard"><img class="logo" src="icon.svg" alt="">
+    <h1>Сэтгэл зүйчийн төлөвлөгөө</h1><p class="s">Нууц кодоо оруулна уу</p>
+    <div class="dots" id="dots">${'<i></i>'.repeat(pin.len)}</div>
+    <div class="keys">${keys.map(k => k ? `<button type="button" data-k="${k}" aria-label="${k === '⌫' ? 'Устгах' : k}">${k}</button>` : '<span></span>').join('')}</div>
+    <div class="err" id="x-err"></div></div>`;
+  const draw = () => document.querySelectorAll('#dots i').forEach((d, k) => d.classList.toggle('on', k < val.length));
+  const press = k => {
+    if (Date.now() < lockUntil) { $('#x-err').textContent = `Хэт олон оролдлоо. ${Math.ceil((lockUntil - Date.now()) / 1000)} секунд хүлээнэ үү.`; return; }
+    $('#x-err').textContent = '';
+    if (k === '⌫') val = val.slice(0, -1); else if (val.length < pin.len) val += k;
+    draw();
+    if (val.length === pin.len) {
+      if (hashPw(val, pin.salt) === pin.hash) { fails = 0; document.removeEventListener('keydown', onKey); try { sessionStorage.setItem('psy-unlocked', '1'); } catch (e) { } return unlock(); }
+      const c = $('#lockcard'); c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake');
+      if (++fails >= 5) { lockUntil = Date.now() + 30000; fails = 0; $('#x-err').textContent = '5 удаа буруу. 30 секунд хүлээнэ үү.'; } else $('#x-err').textContent = 'Код буруу байна.';
+      val = ''; setTimeout(draw, 250);
+    }
+  };
+  const onKey = e => { if (/^[0-9]$/.test(e.key)) press(e.key); else if (e.key === 'Backspace') press('⌫'); };
+  document.addEventListener('keydown', onKey);
+  $('#auth').onclick = e => { const b = e.target.closest('[data-k]'); if (b) press(b.dataset.k); };
 }
-function credsModal(a, pw, title) {
-  const link = inviteLink(a);
-  openModal(`<h2>${title}</h2><div class="cred">Нэр: ${esc(a.name)}<br>Нэвтрэх нэр: <b>${esc(a.username)}</b><br>Нууц үг: <b>${esc(pw)}</b></div>
-    <p class="hint">Нууц үгийг одоо л харагдана — хадгалж аваад сэтгэл зүйчид өгнө үү. Урилга линкийг нууц үгээс тусад нь илгээнэ.</p>
-    <div class="mfoot"><button class="btn" data-m="copycred">${ico('copy')} Нэр, нууц үг</button><button class="btn" data-m="copylink">${ico('copy')} Урилга линк</button><button class="btn primary" data-m="ok">Болсон</button></div>`, m => {
-    m.onclick = e => { const k = e.target.closest('[data-m]')?.dataset.m; if (!k) return;
-      if (k === 'copycred') copyText(`Нэвтрэх нэр: ${a.username}\nНууц үг: ${pw}\nХолбоос: ${link}`); if (k === 'copylink') copyText(link); if (k === 'ok') closeModal(); };
-  });
-}
-function adminAction(act, id) {
-  const acc = accounts.find(a => a.id === id);
-  if (act === 'acc-gen') { $('#a-pw').value = genPw(); return; }
-  if (act === 'acc-create') {
-    const name = $('#a-name').value.trim(), user = $('#a-user').value.trim().toLowerCase(), pw = $('#a-pw').value, role = $('#a-role').value;
-    if (!name || !user) return toast('Нэр болон нэвтрэх нэрийг бөглөнө үү.');
-    if (!/^[a-z0-9._-]{3,}$/.test(user)) return toast('Нэвтрэх нэр: 3+ латин үсэг/тоо (. _ - зөвшөөрнө).');
-    if (accounts.some(a => a.username === user)) return toast('Энэ нэвтрэх нэр бүртгэлтэй байна.');
-    if (pw.length < 6) return toast('Нууц үг 6-аас дээш тэмдэгттэй байх ёстой.');
-    const a = makeAcc({ name, username: user, password: pw, role }); accounts.push(a); saveAcc(); render(); credsModal(a, pw, 'Бүртгэл үүслээ ✓'); return;
-  }
-  if (!acc) return;
-  if (act === 'acc-link') return copyText(inviteLink(acc));
-  if (act === 'acc-toggle') { acc.active = !acc.active; saveAcc(); return render(); }
-  if (act === 'acc-del') { if (confirm(`"${acc.name}" бүртгэлийг устгах уу? Энэ төхөөрөмж дээрх төлөвлөгөө нь мөн устна.`)) { accounts = accounts.filter(a => a.id !== id); try { localStorage.removeItem(dataKey(id)); } catch (e) { } saveAcc(); render(); } return; }
-  if (act === 'acc-pw') {
-    const np = genPw();
-    openModal(`<h2>Нууц үг солих</h2><p style="margin:0 0 12px;color:var(--muted)">${esc(acc.name)} (@${esc(acc.username)})</p>
-      <div class="fld"><label>Шинэ нууц үг</label><input class="in" id="np" value="${np}"></div>
-      <div class="mfoot"><button class="btn" data-m="close">Болих</button><button class="btn primary" data-m="ok">Хадгалах</button></div>`, m => {
-      m.onclick = e => { const k = e.target.closest('[data-m]')?.dataset.m; if (!k) return; if (k === 'close') return closeModal();
-        const v = m.querySelector('#np').value; if (v.length < 6) return toast('6-аас дээш тэмдэгт оруулна уу.');
-        acc.salt = uid() + uid(); acc.hash = hashPw(v, acc.salt); saveAcc(); credsModal(acc, v, 'Нууц үг солигдлоо'); };
-    });
-  }
-}
-function selfPwForm() {
-  openModal(`<h2>Нууц үгээ солих</h2>
-    <div class="fld"><label>Одоогийн нууц үг</label><input class="in" type="password" id="p0" autocomplete="current-password"></div>
-    <div class="fld"><label>Шинэ нууц үг (6+)</label><input class="in" type="password" id="p1" autocomplete="new-password"></div>
+function lockNow() { try { sessionStorage.removeItem('psy-unlocked'); } catch (e) { } location.reload(); }
+function pinForm() {
+  openModal(`<h2>Нууц код солих</h2>
+    <div class="fld"><label>Одоогийн код</label><input class="in" type="password" inputmode="numeric" pattern="[0-9]*" id="p0" autocomplete="off"></div>
+    <div class="fld"><label>Шинэ код (3–8 тоо)</label><input class="in" type="password" inputmode="numeric" pattern="[0-9]*" id="p1" maxlength="8" autocomplete="off"></div>
     <div class="mfoot"><button class="btn" data-m="close">Болих</button><button class="btn primary" data-m="ok">Хадгалах</button></div>`, m => {
     m.onclick = e => { const k = e.target.closest('[data-m]')?.dataset.m; if (!k) return; if (k === 'close') return closeModal();
-      if (hashPw(m.querySelector('#p0').value, me.salt) !== me.hash) return toast('Одоогийн нууц үг буруу байна.');
-      const v = m.querySelector('#p1').value; if (v.length < 6) return toast('Шинэ нууц үг 6-аас дээш тэмдэгттэй байх ёстой.');
-      me.salt = uid() + uid(); me.hash = hashPw(v, me.salt); saveAcc(); closeModal(); toast('Нууц үг солигдлоо ✓'); };
+      const pin = getPin();
+      if (hashPw(m.querySelector('#p0').value, pin.salt) !== pin.hash) return toast('Одоогийн код буруу байна.');
+      const v = m.querySelector('#p1').value; if (!/^[0-9]{3,8}$/.test(v)) return toast('Шинэ код нь 3–8 оронтой тоо байх ёстой.');
+      setPin(v); closeModal(); toast('Нууц код солигдлоо ✓'); };
   });
 }
-
-/* ───────── auth ───────── */
-let fails = 0, lockUntil = 0;
-function authScreen(mode, note) {
-  document.body.classList.add('authing');
-  const setup = mode === 'setup';
-  $('#auth').innerHTML = `<form class="acard" id="af" autocomplete="on"><img class="logo" src="icon.svg" alt="">
-    <h1>${setup ? 'Админ бүртгэл үүсгэх' : 'Нэвтрэх'}</h1>
-    <p class="s">${setup ? 'Эхний удаа — таны бүртгэл админ болно. Дараа нь сэтгэл зүйч нарын бүртгэлийг та үүсгэнэ.' : 'Бүртгэлийг админ үүсгэдэг. Нэвтрэх нэр, нууц үгээ оруулна уу.'}</p>
-    ${note ? `<p class="s" style="color:var(--accent);font-weight:600">${esc(note)}</p>` : ''}
-    ${setup ? '<div class="fld"><label>Бүтэн нэр</label><input class="in" id="x-name" required></div>' : ''}
-    <div class="fld"><label>Нэвтрэх нэр</label><input class="in" id="x-user" required autocapitalize="off" autocomplete="username"></div>
-    <div class="fld"><label>Нууц үг</label><input class="in" id="x-pw" type="password" required autocomplete="${setup ? 'new-password' : 'current-password'}"></div>
-    ${setup ? '<div class="fld"><label>Нууц үг давтах</label><input class="in" id="x-pw2" type="password" required autocomplete="new-password"></div>' : ''}
-    <button class="btn primary" type="submit">${setup ? 'Үүсгэх' : 'Нэвтрэх'}</button><div class="err" id="x-err"></div></form>`;
-  const err = t => { $('#x-err').textContent = t; };
-  $('#af').onsubmit = e => {
-    e.preventDefault();
-    const user = $('#x-user').value.trim().toLowerCase(), pw = $('#x-pw').value;
-    if (setup) {
-      const name = $('#x-name').value.trim();
-      if (!/^[a-z0-9._-]{3,}$/.test(user)) return err('Нэвтрэх нэр: 3+ латин үсэг/тоо.');
-      if (pw.length < 6) return err('Нууц үг 6-аас дээш тэмдэгттэй байх ёстой.');
-      if (pw !== $('#x-pw2').value) return err('Нууц үг таарахгүй байна.');
-      const a = makeAcc({ name, username: user, password: pw, role: 'admin' }); accounts = [a]; saveAcc();
-      try { const old = localStorage.getItem(LEGACY_KEY); if (old) localStorage.setItem(dataKey(a.id), old); } catch (_) { }
-      localStorage.setItem(SES_KEY, a.id); return location.reload();
-    }
-    if (Date.now() < lockUntil) return err(`Хэт олон оролдлоо. ${Math.ceil((lockUntil - Date.now()) / 1000)} секунд хүлээнэ үү.`);
-    const a = accounts.find(x => x.username === user);
-    if (!a || hashPw(pw, a.salt) !== a.hash) { if (++fails >= 5) { lockUntil = Date.now() + 30000; fails = 0; } return err('Нэвтрэх нэр эсвэл нууц үг буруу.'); }
-    if (!a.active) return err('Таны бүртгэл идэвхгүй болсон. Админтайгаа холбогдоно уу.');
-    localStorage.setItem(SES_KEY, a.id); location.reload();
-  };
-  setTimeout(() => $(setup ? '#x-name' : '#x-user').focus(), 50);
-}
-function logout() { try { localStorage.removeItem(SES_KEY); } catch (e) { } location.reload(); }
-
 /* ───────── events ───────── */
 document.addEventListener('click', e => {
   const v = e.target.closest('[data-view]'); if (v) { ui.view = v.dataset.view; render(); scrollTo(0, 0); return; }
@@ -1039,9 +973,7 @@ document.addEventListener('click', e => {
     case 'goMonth': ui.month = a.dataset.m; ui.view = 'month'; ui.sel = a.dataset.m === today().slice(0, 7) ? today() : a.dataset.m + '-01'; render(); scrollTo(0, 0); break;
     case 'flt': ui.filter = a.dataset.k; render(); break;
     case 'ics': exportIcs(); break;
-    case 'logout': logout(); break;
-    case 'selfpw': selfPwForm(); break;
-    default: if (act.startsWith('acc-')) adminAction(act, id);
+    case 'lock': lockNow(); break;
   }
 });
 document.addEventListener('input', e => { if (e.target.id === 'q') { ui.q = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#q'); q.focus(); q.setSelectionRange(pos, pos); } });
@@ -1056,24 +988,25 @@ function startApp() {
     navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready).then(r => { swReg = r; }).catch(() => { });
   }
 }
-function boot() {
-  let note = '';
-  if (location.hash.startsWith('#invite=')) {
-    try {
-      const inv = b64d(location.hash.slice(8)); if (!inv.username || !inv.hash || !inv.salt) throw 0;
-      const k = accounts.findIndex(a => a.id === inv.id || a.username === inv.username);
-      const rec = { id: inv.id, name: inv.name, username: inv.username, salt: inv.salt, hash: inv.hash, role: inv.role === 'admin' ? 'admin' : 'user' };
-      if (k >= 0) Object.assign(accounts[k], rec); else accounts.push(Object.assign({ active: true, created: today() }, rec));
-      saveAcc(); note = `Бүртгэл бэлэн боллоо: @${inv.username}. Админаас авсан нууц үгээрээ нэвтэрнэ үү.`;
-    } catch (e) { note = 'Урилга линк буруу байна.'; }
-    history.replaceState(null, '', location.pathname + location.search);
-  }
-  if (!accounts.length) return authScreen('setup');
-  const a = accounts.find(x => x.id === localStorage.getItem(SES_KEY) && x.active);
-  if (!a) return authScreen('login', note);
-  me = a; KEY = dataKey(a.id); loadState();
-  document.body.classList.remove('authing');
+function unlock() {
+  me = { name: 'Сэтгэл зүйч', role: 'user' }; KEY = LEGACY_KEY; loadState();
+  document.body.classList.remove('authing'); $('#auth').innerHTML = '';
   startApp();
+}
+function migrate() {
+  if (localStorage.getItem('psy-migrated')) return;
+  try {
+    const accs = jget('psy-accounts', []), a = accs.find(x => x.role === 'admin') || accs[0];
+    if (a) { const d = localStorage.getItem(LEGACY_KEY + ':' + a.id); if (d) localStorage.setItem(LEGACY_KEY, d); }
+    accs.forEach(x => localStorage.removeItem(LEGACY_KEY + ':' + x.id));
+    localStorage.removeItem('psy-accounts'); localStorage.removeItem('psy-session');
+    localStorage.setItem('psy-migrated', '1');
+  } catch (e) { }
+}
+function boot() {
+  migrate();
+  let ok = false; try { ok = sessionStorage.getItem('psy-unlocked') === '1'; } catch (e) { }
+  ok ? unlock() : lockScreen();
 }
 boot();
 </script>
