@@ -383,7 +383,7 @@ const jget = (k, d) => { try { const r = localStorage.getItem(k); return r ? JSO
 const jset = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
 let me = null, KEY = LEGACY_KEY, state = blank();
 function loadState() { state = Object.assign(blank(), jget(KEY, {})); state.settings = Object.assign({ notify: true, school: '' }, state.settings); }
-const save = () => { if (KEY && !jset(KEY, state)) toast('Хадгалах хэмжээ дүүрсэн байна. Нөөцлөөд зарим sticker-ээ устгана уу.'); };
+const save = () => { if (KEY && !jset(KEY, state)) toast('Хадгалах хэмжээ дүүрсэн байна. Нөөцлөөд зарим sticker-ээ устгана уу.'); scheduleSync(); };
 
 /* SHA-256 (secure-context шаардахгүй, ямар ч хаяг дээр ижил хэш гаргана) */
 const SHA_K = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];
@@ -880,7 +880,7 @@ function settingsForm() {
     <div class="mfoot"><button class="btn l danger" data-m="wipe">Бүгдийг устгах</button><button class="btn primary" data-m="ok">Болсон</button></div>`, m => {
     renderSettingsStatus();
     m.querySelector('#s-import').onchange = async e => {
-      try { const d = JSON.parse(await e.target.files[0].text()); if (!Array.isArray(d.items)) throw 0; state = Object.assign(state, d); save(); closeModal(); render(); toast('Сэргээгдлээ ✓'); } catch (_) { toast('Файл буруу байна.'); }
+      try { const d = JSON.parse(await e.target.files[0].text()); if (!Array.isArray(d.items)) throw 0; const pm = snapMap(); state = Object.assign(state, d); state.tomb = state.tomb || {}; state.items.forEach(i => { i.u = Date.now(); delete state.tomb[i.id]; }); stamp(pm); save(); closeModal(); render(); toast('Сэргээгдлээ ✓'); } catch (_) { toast('Файл буруу байна.'); }
     };
     m.onclick = e => {
       const a = e.target.closest('[data-m]'); if (!a) return;
@@ -895,7 +895,7 @@ function settingsForm() {
       if (k === 'selfpw') pinForm();
       if (k === 'export') download(`төлөвлөгөө-${today()}.json`, JSON.stringify(state), 'application/json');
       if (k === 'ics') exportIcs();
-      if (k === 'wipe' && confirm('Бүх төлөвлөгөөг устгах уу? Үүнийг буцаах боломжгүй.')) { state.items = []; state.fired = {}; save(); closeModal(); render(); }
+      if (k === 'wipe' && confirm('Бүх төлөвлөгөөг устгах уу? Үүнийг буцаах боломжгүй.')) { closeModal(); mutate(() => { state.items = []; state.fired = {}; }); }
     };
   });
 }
@@ -998,7 +998,11 @@ function setSync(s) {
   syncSt.s = s; if (s === 'ok') { const d = new Date(); syncSt.at = `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
   document.querySelectorAll('.syncbadge').forEach(e => e.textContent = badge());
 }
-function scheduleSync() { if (syncCfg) { clearTimeout(syncT); syncT = setTimeout(() => syncNow(), 1500); } }
+const syncSig = () => JSON.stringify([state.items, state.tomb || {}, state.settings.school, state.stickers.map(s => s.length).join()]);
+function scheduleSync() {
+  if (!syncCfg || syncSig() === lastSig) return;
+  clearTimeout(syncT); syncT = setTimeout(() => { if (syncSig() !== lastSig) syncNow(); }, 1500);
+}
 async function syncNow(manual, retry) {
   if (!syncCfg || syncBusy || !me) return;
   syncBusy = true; setSync('busy');
@@ -1006,7 +1010,7 @@ async function syncNow(manual, retry) {
     const f = await gh(`/contents/${SYNC.file}`);
     if (f && f.content) mergeIn(JSON.parse(b64utf8(f.content)));
     const out = { v: 1, items: state.items, tomb: state.tomb || {}, stickers: state.stickers, school: state.settings.school };
-    const sig = JSON.stringify([out.items, out.tomb, out.school, out.stickers.length]);
+    const sig = syncSig();
     if (sig !== lastSig || !f) {
       await gh(`/contents/${SYNC.file}`, 'PUT', Object.assign({ message: 'sync', content: utf8b64(JSON.stringify(out)) }, f ? { sha: f.sha } : {}));
       lastSig = sig;
@@ -1074,7 +1078,7 @@ function startApp() {
   hydrateIcons();
   render();
   tick(); setInterval(tick, 10000);
-  if (syncCfg) { syncNow(); setInterval(() => syncNow(), 60000); addEventListener('online', () => syncNow()); }
+  if (syncCfg) { syncNow(); setInterval(() => syncNow(), 30000); addEventListener('online', () => syncNow()); }
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { tick(); syncNow(); if (ui.view === 'today') render(); } });
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready).then(r => { swReg = r; }).catch(() => { });
